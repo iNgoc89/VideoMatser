@@ -13,17 +13,13 @@ namespace FFmpegWebAPI.Controllers
         public VideoController(IOTContext iOTContext) 
         {
             _iOTContext = iOTContext;
-            _iOTContext = iOTContext;
-            _iOTContext = iOTContext;
-            _iOTContext = iOTContext;
-            _iOTContext = iOTContext;
         }
         // GET: api/<VideoController>
         [HttpGet]
-        public IEnumerable<Camera> Get()
+        public IEnumerable<VideoCamera>? Get()
         {
-            var data = _iOTContext.Cameras?.ToList();
-            return data;
+            var data = _iOTContext?.VideoCameras?.ToList();
+            return data ;
         }
 
         // GET api/<VideoController>/5

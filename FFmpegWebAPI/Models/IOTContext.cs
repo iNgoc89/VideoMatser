@@ -21,10 +21,14 @@ public partial class IOTContext : DbContext
 
     public virtual DbSet<GroupCamera> GroupCameras { get; set; }
 
+    public virtual DbSet<VideoCamera> VideoCameras { get; set; }
+
+    public virtual DbSet<ConcatVideoCamera> ConcatVideoCameras { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
-            .HasDefaultSchema("Logs")
+            .HasDefaultSchema("cmrs")
             .UseCollation("Latin1_General_100_CI_AS_SC");
 
         modelBuilder.Entity<Camera>(entity =>
@@ -97,6 +101,52 @@ public partial class IOTContext : DbContext
             entity.HasOne(d => d.Camera).WithMany(p => p.GroupCameras).HasForeignKey(d => d.CameraId);
 
             entity.HasOne(d => d.Group).WithMany(p => p.GroupCameras).HasForeignKey(d => d.GroupId);
+        });
+
+        modelBuilder.Entity<VideoCamera>(entity =>
+        {
+            entity.ToTable("VideoCamera", "cmrs");
+
+            entity.Property(e => e.CameraId)
+                .IsRequired();
+
+            entity.Property(e => e.VideoUri)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(e => e.BeginDate)
+                .IsRequired();
+
+            entity.Property(e => e.EndDate)
+                .IsRequired();
+
+            entity.Property(e => e.Status)
+                .IsRequired();
+
+        });
+        modelBuilder.Entity<ConcatVideoCamera>(entity =>
+        {
+            entity.ToTable("ConcatVideoCamera", "cmrs");
+
+            entity.Property(e => e.CameraId)
+            .IsRequired();
+
+            entity.Property(e => e.GID)
+            .IsRequired();
+
+            entity.Property(e => e.VideoUri)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(e => e.BeginDate)
+                .IsRequired();
+
+            entity.Property(e => e.EndDate)
+                .IsRequired();
+
+            entity.Property(e => e.Status)
+                .IsRequired();
+
         });
 
         OnModelCreatingPartial(modelBuilder);
