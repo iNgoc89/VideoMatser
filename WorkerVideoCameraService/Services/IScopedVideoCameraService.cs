@@ -60,7 +60,7 @@ namespace WorkerVideoCameraService.Services
                     {
                         foreach (var cam in cameras)
                         {
-                            var fileName = cam.Id + DateTime.Now.ToString("_ddMMyyyy_HHmmss") + ".mp4";
+                            var fileName = cam.Id + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
                          
                             DuongDanFile = Path.Combine(ThuMucDuongDan, fileName);
 

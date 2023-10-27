@@ -41,8 +41,7 @@ namespace WorkerVideoCameraService.Services
                 if (kq != null)
                 {
                     ThuMucDuongDan = kq.DuongDan;
-                    int dateNow = DateTime.Now.Day;
-                    int timeNow = DateTime.Now.Hour;
+               
                     string[] files = Directory.GetFiles(ThuMucDuongDan);
                     while (!stoppingToken.IsCancellationRequested)
                     {
@@ -50,27 +49,14 @@ namespace WorkerVideoCameraService.Services
                         {
                             if (file.Length > 0)
                             {
-                                var filename = file.Substring(file.Length - 19, 19);
-                                var dateInFile = filename.Substring(0, 2);
+                                var cutright = file.Substring(0, num.Length - 4);
 
-                                int dateFile = 0;
+                                var cutleft = cutright.Substring(5, cutright.Length - 5);
 
-                                if (dateInFile.Length == 2)
-                                {
-                                    dateFile = int.Parse(dateInFile);
-                                }
+                                var datetimeFile =  
 
-                                int timeFile = 0;
-                                var timeInFile = filename.Substring(3, 2);
-                                if (timeInFile.Length == 2)
-                                {
-                                    timeFile = int.Parse(timeInFile);
-                                }
 
-                                if (dateFile > 0 && dateFile < dateNow || timeFile > 0 && timeFile < timeNow && timeNow - timeFile == 5)
-                                {
-                                   _workVideo.DeleteFile(file);
-                                }
+                            
                            
 
                             }
