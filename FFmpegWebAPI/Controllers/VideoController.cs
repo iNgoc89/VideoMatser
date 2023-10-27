@@ -1,4 +1,5 @@
 ﻿using FFmpegWebAPI.Models;
+using FFmpegWebAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -10,41 +11,29 @@ namespace FFmpegWebAPI.Controllers
     public class VideoController : ControllerBase
     {
         public readonly IOTContext _iOTContext;
-        public VideoController(IOTContext iOTContext) 
+        public IOTService _iOTService;
+        public VideoController(IOTContext iOTContext, IOTService iOTService) 
         {
             _iOTContext = iOTContext;
-        }
-        // GET: api/<VideoController>
-        [HttpGet]
-        public IEnumerable<VideoCamera>? Get()
-        {
-            var data = _iOTContext?.VideoCameras?.ToList();
-            return data ;
+            _iOTService = iOTService;
         }
 
         // GET api/<VideoController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("{GID}")]
+        public ConcatVideoCamera? Get(Guid guid)
         {
-            return "value";
+            var data = _iOTContext?.ConcatVideoCameras?.Where(x=>x.GID == guid)?.FirstOrDefault();
+            return data;
         }
 
         // POST api/<VideoController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public int Post(Guid GID, int cameraId, DateTime beginDate, DateTime endDate)
         {
+            var kq = _iOTService.P_ConcatVideoCamera_Insert(GID, cameraId, beginDate, endDate);
+            return kq;
         }
 
-        // PUT api/<VideoController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<VideoController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
+    
     }
 }

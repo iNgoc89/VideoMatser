@@ -21,6 +21,7 @@ namespace WorkerVideoCameraService.Services
         public IOTContext _iOTContext;
         public XmhtService _xmhtService;
         public IConfiguration _configuration;
+        public WorkVideoService _workVideo;
         public readonly string? _connectionString;
         IDbConnection Connection { get { return new SqlConnection(_connectionString); } }
 
@@ -29,18 +30,18 @@ namespace WorkerVideoCameraService.Services
         public long? ThuMucId = null;
         public static string? TenThuMuc = string.Empty;
         public static string? ffmpeg = string.Empty;
-        public static string? TenFile = string.Empty;
         public static string? DuongDanFile = string.Empty;
         public readonly DateTime timeRun = DateTime.Now;
-        public ScopedProcessingService(IOTContext iOTContext, XmhtService xmhtService, IConfiguration configuration)
+        public ScopedProcessingService(IOTContext iOTContext, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
         {
             _iOTContext = iOTContext;
             _xmhtService = xmhtService;
+            _workVideo = workVideo;
             _configuration = configuration;
             _connectionString = configuration["ConnectionStrings:IOTConnection"];
             ffmpeg = _configuration["FFmpeg:Url"];
             typeCamera = int.Parse(_configuration["TypeCamera:Type"] ?? "2");
-            TenThuMuc = _configuration["ThuMucNghiepVu:TenThuMuc"];
+            TenThuMuc = _configuration["ThuMucNghiepVu:VideoCamera"];
         }
 
         public async Task RunApp(CancellationToken stoppingToken)
@@ -49,28 +50,29 @@ namespace WorkerVideoCameraService.Services
             var cameras = _iOTContext.Cameras.Where(x => x.Type == typeCamera).ToList();
             if (idThuMuc > 0)
             {
-                long? ThuMucWSID = 0;
+              
                 string? ThuMucDuongDan = string.Empty;
-                var kq = _xmhtService.TaoThuMuc(null, idThuMuc, DateTime.Now.ToString("yyyyMM"), ref ThuMucWSID, ref ThuMucDuongDan);
-                if (kq > 0)
+                var kq = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMuc).Result;
+                if (kq != null)
                 {
+                    ThuMucDuongDan = kq.DuongDan;
                     while (!stoppingToken.IsCancellationRequested)
                     {
                         foreach (var cam in cameras)
                         {
-                            var fileName = DateTime.Now.ToString("dd_hhmmss") + ".mp4";
-                            TenFile = cam.Id + "_" + fileName;
-                            DuongDanFile = Path.Combine(ThuMucDuongDan, TenFile);
+                            var fileName = cam.Id + DateTime.Now.ToString("_ddMMyyyy_HHmmss") + ".mp4";
+                         
+                            DuongDanFile = Path.Combine(ThuMucDuongDan, fileName);
 
                             //Lưu video
-                            GetVideo(cam.RtspUrl, DuongDanFile);
+                            _workVideo.GetVideo(ffmpeg,cam.RtspUrl, DuongDanFile);
 
-                            P_VideoCamera_Insert(ref idNew, cam.Id, DateTime.Now, DateTime.Now.AddSeconds(5), DuongDanFile, 20);
+                            //P_VideoCamera_Insert(ref idNew, cam.Id, DateTime.Now, DateTime.Now.AddSeconds(5), DuongDanFile, 20);
                         }
                         await Task.Delay(5000, stoppingToken);
 
                         TimeSpan totalTimeRun = DateTime.Now.Subtract(timeRun);
-                        CheckTotalTimeRun(totalTimeRun);
+                        _workVideo.Refresh(totalTimeRun, ffmpeg);
                     }
                  
                 }
@@ -79,30 +81,7 @@ namespace WorkerVideoCameraService.Services
 
          
         }
-        public static void GetVideo(string rtspUrl, string contentRoot)
-        {
-            string cmdLine = $@"-t 5 -rtsp_transport tcp -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel verbose -an -hide_banner";
-
-            Process process = new();
-            process.StartInfo.FileName = ffmpeg;
-            process.StartInfo.Arguments = cmdLine;
-            process.Start();
-        }
-
-        //Kiểm tra điều kiện chạy lại, ví dụ thời gian chạy đã lâu;
-        public static void CheckTotalTimeRun(TimeSpan timeSpan)
-        {
-            if (timeSpan.TotalMinutes == 30)
-            {
-                Refresh();
-            }
-        }
-        public static void Refresh()
-        {
-            Process process = new();
-            process.StartInfo.FileName = ffmpeg;
-            process.Refresh();
-        }
+      
         //Insert video vào database
         public int P_VideoCamera_Insert(ref int id, int cameraId, DateTime beginDate, DateTime endDate, string videoUri, byte status)
         {
@@ -142,19 +121,6 @@ namespace WorkerVideoCameraService.Services
             }
             return 0;
         }
-        public static void TestCMD(string contentRoot)
-        {
-            string cmdLine = $@"-t 5 -rtsp_transport tcp -i rtsp://admin:Hd123456@10.68.81.193:554/ -vf scale=704:576 -r 24 -crf 23 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel verbose -an -hide_banner";
-            //string cmdLine = @"/C ""C:\Data\Files\text.txt""";
-            Process process = new();
-            var processStartInfo = new ProcessStartInfo(@"C:\Data\FFmpeg\bin\ffmpeg.exe")
-            {
-                WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
-                Arguments = cmdLine
-            };
-            process.StartInfo = processStartInfo;
-            process.Start();
-        }
-
+      
     }
 }

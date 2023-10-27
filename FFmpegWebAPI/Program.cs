@@ -1,5 +1,6 @@
 ﻿using Azure.Core;
 using FFmpegWebAPI.Models;
+using FFmpegWebAPI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Expressions;
@@ -21,6 +22,7 @@ internal class Program
         builder.Services.AddSwaggerGen();
         builder.Services.AddDbContext<IOTContext>(options =>
                   options.UseSqlServer(builder.Configuration.GetConnectionString("IOTConnection")));
+        builder.Services.AddScoped<IOTService>();
 
         var app = builder.Build();
 

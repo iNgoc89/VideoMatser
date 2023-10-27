@@ -4,9 +4,7 @@
     {
         public int Id { get; set; }
         public int CameraId { get; set; }
-
-        public string GID { get; set; } = string.Empty;
-
+        public Guid GID { get; set; }
         public DateTime BeginDate { get; set; }
         public DateTime EndDate { get; set; }
 
