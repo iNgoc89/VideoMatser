@@ -128,24 +128,7 @@ public partial class IOTContext : DbContext
         {
             entity.ToTable("ConcatVideoCamera", "cmrs");
 
-            entity.Property(e => e.CameraId)
-            .IsRequired();
-
-            entity.Property(e => e.GID)
-            .IsRequired();
-
-            entity.Property(e => e.VideoUri)
-                .IsRequired()
-                .HasMaxLength(250);
-
-            entity.Property(e => e.BeginDate)
-                .IsRequired();
-
-            entity.Property(e => e.EndDate)
-                .IsRequired();
-
-            entity.Property(e => e.Status)
-                .IsRequired();
+         
 
         });
 

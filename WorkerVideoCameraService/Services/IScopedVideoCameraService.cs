@@ -50,19 +50,17 @@ namespace WorkerVideoCameraService.Services
             var cameras = _iOTContext.Cameras.Where(x => x.Type == typeCamera).ToList();
             if (idThuMuc > 0)
             {
-              
-                string? ThuMucDuongDan = string.Empty;
                 var kq = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMuc).Result;
                 if (kq != null)
                 {
-                    ThuMucDuongDan = kq.DuongDan;
+                  
                     while (!stoppingToken.IsCancellationRequested)
                     {
                         foreach (var cam in cameras)
                         {
                             var fileName = cam.Id + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
                          
-                            DuongDanFile = Path.Combine(ThuMucDuongDan, fileName);
+                            DuongDanFile = Path.Combine(kq.DuongDan, fileName);
 
                             //Lưu video
                             _workVideo.GetVideo(ffmpeg,cam.RtspUrl, DuongDanFile);

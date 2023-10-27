@@ -1,4 +1,5 @@
 ﻿using FFmpegWebAPI.Models;
+using FFmpegWebAPI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,47 +18,61 @@ namespace WorkerVideoCameraService.Services
         public IHostEnvironment _environment;
         public XmhtService _xmhtService;
         public IOTContext _iOTContext;
+        public IOTService _iOTService;
+        public WorkVideoService _workVideoService;
         public long? ThuMucId = null;
-        public static string? TenThuMuc = string.Empty;
-        public static string? DuongDanFile = string.Empty;
-        public ConcatProcessingService(IHostEnvironment environment, XmhtService xmhtService, IConfiguration configuration, IOTContext iOTContext)
+        public static string? ThuMucLay = string.Empty;
+        public static string? DuongDanFileLuu = string.Empty;
+        public static string? ThuMucLuu = string.Empty;
+        public static string? ffmpeg = string.Empty;
+  
+        public ConcatProcessingService(IHostEnvironment environment, XmhtService xmhtService, IOTService iOTService,
+            IConfiguration configuration, IOTContext iOTContext, WorkVideoService workVideoService)
         {
             _configuration = configuration;
             _environment = environment;
             _xmhtService = xmhtService;
             _iOTContext = iOTContext;
-            TenThuMuc = _configuration["ThuMucNghiepVu:ConcatVideoCamera"];
+            _workVideoService = workVideoService;
+            _iOTService = iOTService;
+            ThuMucLay = _configuration["ThuMucNghiepVu:VideoCamera"];
+            ThuMucLuu = _configuration["ThuMucNghiepVu:ConcatVideoCamera"];
+            ffmpeg = _configuration["FFmpeg:Url"];
+
         }
         public async Task RunConcatFile(CancellationToken stoppingToken)
         {
-            long idThuMuc = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, TenThuMuc);
-            if (idThuMuc > 0)
+            long idThuMucLay = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, ThuMucLay);
+            long idThuMucLuu = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, ThuMucLuu);
+            if (idThuMucLay > 0 && idThuMucLuu > 0)
             {
-                long? ThuMucWSID = 0;
-                string? ThuMucDuongDan = string.Empty;
-                var kq = _xmhtService.TaoThuMuc(null, idThuMuc, DateTime.Now.ToString("yyyyMM"), ref ThuMucWSID, ref ThuMucDuongDan);
-                if (kq > 0)
+                var urlLay = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLay).Result;
+                var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLuu).Result;
+                if (urlLay != null && urlLuu != null)
                 {
                     while (!stoppingToken.IsCancellationRequested)
                     {
-                        var requets = _iOTContext.ConcatVideoCameras.Where(x => x.VideoUri == string.Empty && x.Status == 20).ToList();
+                        var requets = _iOTContext.ConcatVideoCameras.Where(x=> string.IsNullOrEmpty(x.VideoUri) && x.Status == 20).ToList();
                         if (requets.Count > 0)
                         {
                             foreach (var item in requets)
                             {
+                                var fileName = item.Id + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
+                                DuongDanFileLuu = Path.Combine(urlLuu.DuongDan, fileName);
 
+                                //Concat Video
+                                _workVideoService.ConcatVideo(urlLay.DuongDan, item.BeginDate, item.EndDate, ffmpeg, DuongDanFileLuu);
+
+                                //Update table ConcatVideoCamera
+                                _iOTService.P_ConcatVideoCamera_Update(item.Id, DuongDanFileLuu);
                             }
-                            await Task.Delay(1000, stoppingToken);
+
                         }
+                        await Task.Delay(1000, stoppingToken);
                     }
                 }
             }
 
-        }
-
-        public void DeleteFile(string filePath)
-        {
-            System.IO.File.Delete(filePath);
         }
     }
 }

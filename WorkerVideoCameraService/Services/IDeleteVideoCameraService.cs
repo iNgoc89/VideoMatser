@@ -17,18 +17,20 @@ namespace WorkerVideoCameraService.Services
     internal class DeleteProcessingService : IDeleteVideoCameraService
     {
         public IConfiguration _configuration;
-        public IHostEnvironment _environment; 
+        public IHostEnvironment _environment;
         public XmhtService _xmhtService;
         public WorkVideoService _workVideo;
         public long? ThuMucId = null;
         public static string? TenThuMuc = string.Empty;
         public static string? DuongDanFile = string.Empty;
+        public double TimeDelete = 0;
         public DeleteProcessingService(IHostEnvironment environment, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
         {
             _configuration = configuration;
             _environment = environment;
             _xmhtService = xmhtService;
             TenThuMuc = _configuration["ThuMucNghiepVu:TenThuMuc"];
+            TimeDelete = double.Parse(_configuration["TimeDelete:Time"] ?? "5");
             _workVideo = workVideo;
         }
         public async Task RunDeleteFile(CancellationToken stoppingToken)
@@ -36,12 +38,11 @@ namespace WorkerVideoCameraService.Services
             long idThuMuc = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, TenThuMuc);
             if (idThuMuc > 0)
             {
-                string? ThuMucDuongDan = string.Empty;
                 var kq = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMuc).Result;
                 if (kq != null)
                 {
-                    ThuMucDuongDan = kq.DuongDan;
-               
+                    string? ThuMucDuongDan = kq.DuongDan;
+
                     string[] files = Directory.GetFiles(ThuMucDuongDan);
                     while (!stoppingToken.IsCancellationRequested)
                     {
@@ -49,25 +50,30 @@ namespace WorkerVideoCameraService.Services
                         {
                             if (file.Length > 0)
                             {
-                                var cutright = file.Substring(0, num.Length - 4);
+                                var cutright = file[..^4];
 
-                                var cutleft = cutright.Substring(5, cutright.Length - 5);
+                                var cutleft = cutright[5..];
 
-                                var datetimeFile =  
+                                DateTime? dateTime;
+                                if (cutleft.Length > 0)
+                                {
+                                    long datetimeFile = long.Parse(cutleft);
 
+                                    dateTime = new DateTime(datetimeFile);
 
-                            
-                           
-
+                                    if (dateTime < DateTime.Now.AddMinutes(- TimeDelete))
+                                    {
+                                        _workVideo.DeleteFile(ThuMucDuongDan);
+                                    }
+                                }
                             }
                         }
                         await Task.Delay(1000, stoppingToken);
                     }
                 }
+
             }
-         
         }
 
-      
     }
 }
