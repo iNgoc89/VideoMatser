@@ -1,5 +1,6 @@
 ﻿using FFmpegWebAPI.Models;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,6 +13,7 @@ namespace WorkerVideoCameraService.Services
     public class WorkVideoService
     {
         public IOTContext _iOTContext;
+        public string txtCmdConcat = string.Empty;
         public WorkVideoService(IOTContext iOTContext)
         {
             _iOTContext = iOTContext;
@@ -26,12 +28,30 @@ namespace WorkerVideoCameraService.Services
             process.Start();
         }
 
-        public void ConcatVideo(string ThuMucDuongDan, DateTime beginDate, DateTime endDate, string? fileName, string contentRoot)
+
+        public string CreateConcatTxt(int camId, string ThuMucVideo, DateTime beginDate, DateTime endDate, string tenFileConcatTxt)
         {
-            var listVideo = SeachFile(ThuMucDuongDan, beginDate, endDate);
-            if (!string.IsNullOrEmpty(listVideo))
+            var txtFileConcat = SeachFile(camId, ThuMucVideo, beginDate, endDate);
+            if (!string.IsNullOrEmpty(txtFileConcat))
             {
-                string cmdLine = $@" -i ""concat:{listVideo}"" -c copy {contentRoot}";
+                string cmdLine = $@"/C ({txtFileConcat}) > {tenFileConcatTxt}";
+
+                Process process = new();
+                process.StartInfo.FileName = "CMD.exe";
+                process.StartInfo.Arguments = cmdLine;
+                process.Start();
+
+            }
+
+            return tenFileConcatTxt;
+        }
+
+        public void ConcatVideo(int camId, string ThuMucDuongDan, string TenFileConcatTxt, DateTime beginDate, DateTime endDate, string? fileName, string contentRoot)
+        {
+            var txtFileConcat = CreateConcatTxt(camId, ThuMucDuongDan, beginDate, endDate, TenFileConcatTxt);
+            if (!string.IsNullOrEmpty(txtFileConcat))
+            {
+                string cmdLine = $@" -f concat -safe 0 -i {txtFileConcat} -c copy {contentRoot}";
 
                 Process process = new();
                 process.StartInfo.FileName = fileName;
@@ -42,11 +62,6 @@ namespace WorkerVideoCameraService.Services
         }
 
    
-        public class Video
-        {
-            public int CameraId { get; set; }
-            public DateTime Time { get; set; }
-        }
         public void Refresh(TimeSpan timeSpan, string? fileName)
         {
             if (timeSpan.TotalMinutes == 30)
@@ -57,11 +72,11 @@ namespace WorkerVideoCameraService.Services
             }
         }
 
-        public string SeachFile(string ThuMucDuongDan, DateTime beginDate, DateTime endDate)
+        public string SeachFile(int camId, string ThuMucVideo, DateTime beginDate, DateTime endDate)
         {
-            string textList = string.Empty;
-         
-            string[] files = Directory.GetFiles(ThuMucDuongDan);
+            var camIdstring = $@"{camId}_*";
+            string cmdLine = string.Empty;
+            string[] files = Directory.GetFiles(ThuMucVideo, camIdstring, SearchOption.AllDirectories);
             foreach (var file in files)
             {
                 if (file.Length > 0)
@@ -83,7 +98,7 @@ namespace WorkerVideoCameraService.Services
 
                             if (dateTime >= beginDate && dateTime <= endDate)
                             {
-                                textList += file + "|";
+                                 cmdLine += $@"echo file '{file}' & ";
                             }
                         }
                         
@@ -93,7 +108,11 @@ namespace WorkerVideoCameraService.Services
                 }
 
             }
-            return textList;
+            if (!string.IsNullOrEmpty(cmdLine))
+            {
+                cmdLine = cmdLine[..^2];
+            }
+            return cmdLine;
         }
         public void DeleteFile(string filePath)
         {

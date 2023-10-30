@@ -9,8 +9,8 @@ IHost host = Host.CreateDefaultBuilder(args)
     {
         IConfiguration configuration = hostContext.Configuration;
         //service get video
-        //services.AddHostedService<ScopedVideoCameraService>();
-        //services.AddScoped<IScopedVideoCameraService, ScopedProcessingService>();
+        services.AddHostedService<ScopedVideoCameraService>();
+        services.AddScoped<IScopedVideoCameraService, ScopedProcessingService>();
 
         //service delete video
         //services.AddHostedService<DeleteVideoCameraService>();

@@ -23,7 +23,9 @@ namespace WorkerVideoCameraService.Services
         public long? ThuMucId = null;
         public static string? ThuMucLay = string.Empty;
         public static string? DuongDanFileLuu = string.Empty;
+        public static string? DuongDanFileTXT = string.Empty;
         public static string? ThuMucLuu = string.Empty;
+        public static string? ThuMucTxt = string.Empty;
         public static string? ffmpeg = string.Empty;
   
         public ConcatProcessingService(IHostEnvironment environment, XmhtService xmhtService, IOTService iOTService,
@@ -37,6 +39,7 @@ namespace WorkerVideoCameraService.Services
             _iOTService = iOTService;
             ThuMucLay = _configuration["ThuMucNghiepVu:VideoCamera"];
             ThuMucLuu = _configuration["ThuMucNghiepVu:ConcatVideoCamera"];
+            ThuMucTxt = _configuration["ThuMucNghiepVu:CmdConcat"];
             ffmpeg = _configuration["FFmpeg:Url"];
 
         }
@@ -44,31 +47,45 @@ namespace WorkerVideoCameraService.Services
         {
             long idThuMucLay = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, ThuMucLay);
             long idThuMucLuu = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, ThuMucLuu);
-            if (idThuMucLay > 0 && idThuMucLuu > 0)
+            long idThuMucTxt = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, ThuMucTxt);
+            if (idThuMucLay > 0 && idThuMucLuu > 0 && idThuMucTxt > 0)
             {
                 var urlLay = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLay).Result;
                 var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLuu).Result;
-                if (urlLay != null && urlLuu != null)
+                var urlTxt = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucTxt).Result;
+                if (urlLay != null && urlLuu != null && urlTxt != null)
                 {
+                    
+
                     while (!stoppingToken.IsCancellationRequested)
                     {
-                        var requets = _iOTContext.ConcatVideoCameras.Where(x=> string.IsNullOrEmpty(x.VideoUri) && x.Status == 20).ToList();
-                        if (requets.Count > 0)
+                        var yc = _iOTContext.ConcatVideoCameras.Where(x=> string.IsNullOrEmpty(x.VideoUri) && x.Status == 20).ToList();
+                        if (yc.Count > 0)
                         {
-                            foreach (var item in requets)
+                            foreach (var item in yc)
                             {
-                                var fileName = item.Id + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
+                                var fileName = item.CameraId + "_" + item.BeginDate.Ticks + ".mp4";
+
+                                var fileNameTxt = item.CameraId + "_" + item.BeginDate.Ticks + ".txt";
+
                                 DuongDanFileLuu = Path.Combine(urlLuu.DuongDan, fileName);
+                                DuongDanFileTXT = Path.Combine(urlTxt.DuongDan, fileNameTxt);
 
                                 //Concat Video
-                                _workVideoService.ConcatVideo(urlLay.DuongDan, item.BeginDate, item.EndDate, ffmpeg, DuongDanFileLuu);
+                                _workVideoService.ConcatVideo(item.CameraId, urlLay.DuongDan, DuongDanFileTXT, item.BeginDate, item.EndDate, ffmpeg, DuongDanFileLuu);
 
-                                //Update table ConcatVideoCamera
-                                _iOTService.P_ConcatVideoCamera_Update(item.Id, DuongDanFileLuu);
+                               
+                                //Check file tồn tại
+                                if (File.Exists(DuongDanFileLuu))
+                                {
+                                    //Update table ConcatVideoCamera
+                                    _iOTService.P_ConcatVideoCamera_Update(item.Id, DuongDanFileLuu);
+                                }
+                                
                             }
 
                         }
-                        await Task.Delay(1000, stoppingToken);
+                        await Task.Delay(3000, stoppingToken);
                     }
                 }
             }
