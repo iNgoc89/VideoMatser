@@ -48,7 +48,7 @@ namespace FFmpegWebAPI.Services
             }
             return 0;
         }
-        public void P_ConcatVideoCamera_Update(int id, string videoUri)
+        public void P_ConcatVideoCamera_Update(int id, string videoUri, int status)
         {
             using (var connection = Connection)
             {
@@ -60,7 +60,8 @@ namespace FFmpegWebAPI.Services
                     pars.AddDynamicParams(new
                     {
                       Id = id,
-                      VideoUri = videoUri
+                      VideoUri = videoUri,
+                      Status = status
                     });
 
                     var ret = connection.Query(sql: sql, param: pars,
@@ -77,6 +78,36 @@ namespace FFmpegWebAPI.Services
                 }
             }
           
+        }
+        public void P_ConcatVideoCamera_UpdateStatus(int id, int status)
+        {
+            using (var connection = Connection)
+            {
+                connection.Open();
+                string sql = $"cmrs.P_ConcatVideoCamera_UpdateStatus";
+                try
+                {
+                    var pars = new DynamicParameters();
+                    pars.AddDynamicParams(new
+                    {
+                        Id = id,
+                        Status = status
+                    });
+
+                    var ret = connection.Query(sql: sql, param: pars,
+                     commandType: CommandType.StoredProcedure);
+
+                }
+                catch (Exception)
+                {
+                    //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                }
+                finally
+                {
+                    if (connection.State == ConnectionState.Open) connection.Close();
+                }
+            }
+
         }
     }
 }

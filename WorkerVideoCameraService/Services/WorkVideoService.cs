@@ -2,21 +2,38 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace WorkerVideoCameraService.Services
 {
-    public class WorkVideoService
+    public class WorkVideoService : IDisposable
     {
         public IOTContext _iOTContext;
         public string txtCmdConcat = string.Empty;
-        public WorkVideoService(IOTContext iOTContext)
+        // trường lưu trạng thái Dispose
+        private bool m_Disposed = false;
+
+        private StreamWriter stream;
+
+
+        // Phương thức triển khai từ giao diện
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        public WorkVideoService(IOTContext iOTContext, string filename)
         {
             _iOTContext = iOTContext;
+            stream = new StreamWriter(filename, true);
         }
         public void GetVideo(string? fileName, string rtspUrl, string contentRoot)
         {
@@ -74,49 +91,83 @@ namespace WorkerVideoCameraService.Services
 
         public string SeachFile(int camId, string ThuMucVideo, DateTime beginDate, DateTime endDate)
         {
-            var camIdstring = $@"{camId}_*";
             string cmdLine = string.Empty;
-            string[] files = Directory.GetFiles(ThuMucVideo, camIdstring, SearchOption.AllDirectories);
-            foreach (var file in files)
+            string[]? files = CheckFile(camId, ThuMucVideo, beginDate, endDate);
+            if (files?.Length > 0)
             {
-                if (file.Length > 0)
+                foreach (var file in files)
                 {
-                    
-                    var cutright = file[..^4];
-                    var cutleft = cutright.Substring(cutright.LastIndexOf('_'), cutright.Length - cutright.LastIndexOf('_'));
-
-                    var catleft2 = cutleft[1..];
-
-                    DateTime? dateTime;
-                    if (catleft2.Length > 0)
+                    if (file.Length > 0)
                     {
-                        long datetimeFile;
-                        long.TryParse(catleft2, out datetimeFile);
-                        if (datetimeFile > 0)
-                        {
-                            dateTime = new DateTime(datetimeFile);
-
-                            if (dateTime >= beginDate && dateTime <= endDate)
-                            {
-                                 cmdLine += $@"echo file '{file}' & ";
-                            }
-                        }
-                        
-
+                        cmdLine += $@"echo file '{file}' & ";
                     }
-
                 }
-
+                if (!string.IsNullOrEmpty(cmdLine))
+                {
+                    cmdLine = cmdLine[..^2];
+                }
             }
-            if (!string.IsNullOrEmpty(cmdLine))
-            {
-                cmdLine = cmdLine[..^2];
-            }
+         
             return cmdLine;
         }
         public void DeleteFile(string filePath)
         {
-            System.IO.File.Delete(filePath);
+            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+            {
+                File.Delete(filePath);
+            }
+
+        }
+
+        public string[]? CheckFile(int camId, string ThuMucLay, DateTime beginDate, DateTime endDate) 
+        {
+            var camIdstring = $@"{camId}_*";
+            string cmdLine = string.Empty;
+
+            List<string> listFile = new List<string>();
+            String[]? filesReturl = null;
+            string[] files = Directory.GetFiles(ThuMucLay, camIdstring, SearchOption.AllDirectories);
+           
+            foreach (var file in files)
+            {
+                using (var stream = File.Open(file, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+                {
+                    if (file.Length > 0)
+                    {
+                        var cutright = file[..^4];
+                        var cutleft = cutright.Substring(cutright.LastIndexOf('_'), cutright.Length - cutright.LastIndexOf('_'));
+
+                        var catleft2 = cutleft[1..];
+
+                        DateTime? dateTime;
+                        if (catleft2.Length > 0)
+                        {
+                            long datetimeFile;
+                            long.TryParse(catleft2, out datetimeFile);
+                            if (datetimeFile > 0)
+                            {
+                                dateTime = new DateTime(datetimeFile);
+
+                                if (dateTime >= beginDate && dateTime <= endDate)
+                                {
+                                    listFile.Add(file);
+
+                                }
+                            }
+                        }
+                    }
+                    stream.Close();
+                    stream.Dispose();
+                }
+            
+            }
+
+            if (listFile.Count > 0)
+            {
+                filesReturl = listFile.ToArray();
+            }
+
+            return filesReturl;
         }
         public void TestCMD(string contentRoot)
         {
@@ -131,6 +182,33 @@ namespace WorkerVideoCameraService.Services
             process.StartInfo = processStartInfo;
             process.Start();
         }
+        protected virtual void Dispose(bool disposing)
+        {
+            // Check to see if Dispose has already been called.
+            if (!this.disposed)
+            {
+                // If disposing equals true, dispose all managed
+                // and unmanaged resources.
+                if (disposing)
+                {
+                    // Dispose managed resources.
+                    component.Dispose();
+                }
 
+                // Call the appropriate methods to clean up
+                // unmanaged resources here.
+                // If disposing is false,
+                // only the following code is executed.
+                CloseHandle(handle);
+                handle = IntPtr.Zero;
+
+                // Note disposing has been done.
+                disposed = true;
+            }
+        }
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+        }
     }
 }

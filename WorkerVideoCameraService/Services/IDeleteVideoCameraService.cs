@@ -29,7 +29,7 @@ namespace WorkerVideoCameraService.Services
             _configuration = configuration;
             _environment = environment;
             _xmhtService = xmhtService;
-            TenThuMuc = _configuration["ThuMucNghiepVu:TenThuMuc"];
+            TenThuMuc = _configuration["ThuMucNghiepVu:VideoCamera"];
             TimeDelete = double.Parse(_configuration["TimeDelete:Time"] ?? "5");
             _workVideo = workVideo;
         }
@@ -43,28 +43,36 @@ namespace WorkerVideoCameraService.Services
                 {
                     string? ThuMucDuongDan = kq.DuongDan;
 
-                    string[] files = Directory.GetFiles(ThuMucDuongDan);
+                 
                     while (!stoppingToken.IsCancellationRequested)
                     {
+                        string[] files = Directory.GetFiles(ThuMucDuongDan);
                         foreach (string file in files)
                         {
                             if (file.Length > 0)
                             {
                                 var cutright = file[..^4];
+                                var cutleft = cutright.Substring(cutright.LastIndexOf('_'), cutright.Length - cutright.LastIndexOf('_'));
 
-                                var cutleft = cutright[5..];
+                                var catleft2 = cutleft[1..];
 
                                 DateTime? dateTime;
-                                if (cutleft.Length > 0)
+                                if (catleft2.Length > 0)
                                 {
-                                    long datetimeFile = long.Parse(cutleft);
-
-                                    dateTime = new DateTime(datetimeFile);
-
-                                    if (dateTime < DateTime.Now.AddMinutes(- TimeDelete))
+                                    long datetimeFile;
+                                    long.TryParse(catleft2, out datetimeFile);
+                                    if (datetimeFile > 0)
                                     {
-                                        _workVideo.DeleteFile(ThuMucDuongDan);
+                                        dateTime = new DateTime(datetimeFile);
+
+                                        if (dateTime < DateTime.Now.AddMinutes(-TimeDelete))
+                                        {
+                                            _workVideo.DeleteFile(file);
+                                        }
+
                                     }
+
+                                   
                                 }
                             }
                         }

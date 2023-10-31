@@ -27,7 +27,7 @@ namespace WorkerVideoCameraService.Services
         public static string? ThuMucLuu = string.Empty;
         public static string? ThuMucTxt = string.Empty;
         public static string? ffmpeg = string.Empty;
-  
+
         public ConcatProcessingService(IHostEnvironment environment, XmhtService xmhtService, IOTService iOTService,
             IConfiguration configuration, IOTContext iOTContext, WorkVideoService workVideoService)
         {
@@ -51,16 +51,20 @@ namespace WorkerVideoCameraService.Services
             if (idThuMucLay > 0 && idThuMucLuu > 0 && idThuMucTxt > 0)
             {
                 var urlLay = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLay).Result;
-                var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLuu).Result;
+
                 var urlTxt = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucTxt).Result;
-                if (urlLay != null && urlLuu != null && urlTxt != null)
+                if (urlLay != null && urlTxt != null)
                 {
-                    
+
 
                     while (!stoppingToken.IsCancellationRequested)
                     {
-                        var yc = _iOTContext.ConcatVideoCameras.Where(x=> string.IsNullOrEmpty(x.VideoUri) && x.Status == 20).ToList();
-                        if (yc.Count > 0)
+                        long? ThuMucWSID = 0;
+                        string ThuMucDuongDan = string.Empty;
+                        var thuMuc = _xmhtService.TaoThuMuc(null, idThuMucLuu, DateTime.Now.ToString("yyyyMM"), ref ThuMucWSID, ref ThuMucDuongDan);
+                        var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc).Result;
+                        var yc = _iOTContext.ConcatVideoCameras.Where(x => string.IsNullOrEmpty(x.VideoUri) && x.Status < 3).ToList();
+                        if (yc.Count > 0 && thuMuc > 0 && urlLuu != null)
                         {
                             foreach (var item in yc)
                             {
@@ -71,17 +75,41 @@ namespace WorkerVideoCameraService.Services
                                 DuongDanFileLuu = Path.Combine(urlLuu.DuongDan, fileName);
                                 DuongDanFileTXT = Path.Combine(urlTxt.DuongDan, fileNameTxt);
 
-                                //Concat Video
-                                _workVideoService.ConcatVideo(item.CameraId, urlLay.DuongDan, DuongDanFileTXT, item.BeginDate, item.EndDate, ffmpeg, DuongDanFileLuu);
 
-                               
-                                //Check file tồn tại
-                                if (File.Exists(DuongDanFileLuu))
+                                //Kiểm tra trước khi concat
+                                var checkVideo = _iOTContext.ConcatVideoCameras.Where(x => x.CameraId == item.CameraId && x.BeginDate == item.BeginDate && x.EndDate == item.EndDate && item.Status == 20).ToList();
+                                if (checkVideo.Count > 0)
                                 {
-                                    //Update table ConcatVideoCamera
-                                    _iOTService.P_ConcatVideoCamera_Update(item.Id, DuongDanFileLuu);
+                                    var urlFileLuu = checkVideo?.FirstOrDefault()?.VideoUri;
+                                    if (!string.IsNullOrEmpty(urlFileLuu))
+                                    {
+                                        _iOTService.P_ConcatVideoCamera_Update(item.Id, urlFileLuu, 20);
+                                    }
+                                   
+                                    continue;
                                 }
-                                
+                                var checkFile = _workVideoService.CheckFile(item.CameraId, urlLay.DuongDan, item.BeginDate, item.EndDate);
+                                if (checkFile?.Length > 0)
+                                {
+                                    //Concat Video
+                                    _workVideoService.ConcatVideo(item.CameraId, urlLay.DuongDan, DuongDanFileTXT, item.BeginDate, item.EndDate, ffmpeg, DuongDanFileLuu);
+
+                                    //Check file tồn tại
+                                    if (File.Exists(DuongDanFileLuu))
+                                    {
+                                        //Update table ConcatVideoCamera
+                                        _iOTService.P_ConcatVideoCamera_Update(item.Id, DuongDanFileLuu, 20);
+                                    }
+                                }
+                                else
+                                {
+                                    //Tăng status + 1 -> 3 thì dừng
+                                    _iOTService.P_ConcatVideoCamera_UpdateStatus(item.Id, item.Status + 1);
+                                }
+
+
+
+
                             }
 
                         }

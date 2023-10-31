@@ -13,8 +13,8 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddScoped<IScopedVideoCameraService, ScopedProcessingService>();
 
         //service delete video
-        //services.AddHostedService<DeleteVideoCameraService>();
-        //services.AddScoped<IDeleteVideoCameraService, DeleteProcessingService>();
+        services.AddHostedService<DeleteVideoCameraService>();
+        services.AddScoped<IDeleteVideoCameraService, DeleteProcessingService>();
 
         //service concat video
         services.AddHostedService<ConcatVideoCameraService>();
