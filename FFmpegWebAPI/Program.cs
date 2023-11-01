@@ -1,4 +1,5 @@
 ﻿using Azure.Core;
+using FFmpegWebAPI.Data;
 using FFmpegWebAPI.Models;
 using FFmpegWebAPI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,8 @@ internal class Program
         builder.Services.AddDbContext<IOTContext>(options =>
                   options.UseSqlServer(builder.Configuration.GetConnectionString("IOTConnection")));
         builder.Services.AddScoped<IOTService>();
+        builder.Services.AddScoped<WorkVideoService>();
+        builder.Services.AddScoped<XmhtService>();
 
         var app = builder.Build();
 
@@ -32,7 +35,7 @@ internal class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-
+        app.UseMiddleware<CustomApiKeyMiddleware>();
         app.UseStaticFiles();
         app.UseHttpsRedirection();
 

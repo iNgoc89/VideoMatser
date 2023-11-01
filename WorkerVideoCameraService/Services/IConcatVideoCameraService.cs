@@ -68,9 +68,9 @@ namespace WorkerVideoCameraService.Services
                         {
                             foreach (var item in yc)
                             {
-                                var fileName = item.CameraId + "_" + item.BeginDate.Ticks + ".mp4";
+                                var fileName = item.GID + ".mp4";
 
-                                var fileNameTxt = item.CameraId + "_" + item.BeginDate.Ticks + ".txt";
+                                var fileNameTxt = item.GID + ".txt";
 
                                 DuongDanFileLuu = Path.Combine(urlLuu.DuongDan, fileName);
                                 DuongDanFileTXT = Path.Combine(urlTxt.DuongDan, fileNameTxt);

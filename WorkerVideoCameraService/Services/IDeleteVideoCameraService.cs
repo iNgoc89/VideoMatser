@@ -1,4 +1,5 @@
 ﻿using FFmpegWebAPI.Data;
+using FFmpegWebAPI.Services;
 using Microsoft.AspNetCore.Hosting;
 using System;
 using System.Collections.Generic;
@@ -52,15 +53,14 @@ namespace WorkerVideoCameraService.Services
                             if (file.Length > 0)
                             {
                                 var cutright = file[..^4];
-                                var cutleft = cutright.Substring(cutright.LastIndexOf('_'), cutright.Length - cutright.LastIndexOf('_'));
+                                var cutleft = cutright[cutright.LastIndexOf('_')..];
 
                                 var catleft2 = cutleft[1..];
 
                                 DateTime? dateTime;
                                 if (catleft2.Length > 0)
                                 {
-                                    long datetimeFile;
-                                    long.TryParse(catleft2, out datetimeFile);
+                                    _ = long.TryParse(catleft2, out long datetimeFile);
                                     if (datetimeFile > 0)
                                     {
                                         dateTime = new DateTime(datetimeFile);

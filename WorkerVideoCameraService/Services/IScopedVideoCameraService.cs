@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using FFmpegWebAPI.Models;
+using FFmpegWebAPI.Services;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -22,8 +23,6 @@ namespace WorkerVideoCameraService.Services
         public XmhtService _xmhtService;
         public IConfiguration _configuration;
         public WorkVideoService _workVideo;
-        public readonly string? _connectionString;
-        IDbConnection Connection { get { return new SqlConnection(_connectionString); } }
 
         public int idNew = 0;
         public int typeCamera = 0;
@@ -38,7 +37,7 @@ namespace WorkerVideoCameraService.Services
             _xmhtService = xmhtService;
             _workVideo = workVideo;
             _configuration = configuration;
-            _connectionString = configuration["ConnectionStrings:IOTConnection"];
+
             ffmpeg = _configuration["FFmpeg:Url"];
             typeCamera = int.Parse(_configuration["TypeCamera:Type"] ?? "2");
             TenThuMuc = _configuration["ThuMucNghiepVu:VideoCamera"];
@@ -79,46 +78,5 @@ namespace WorkerVideoCameraService.Services
 
          
         }
-      
-        //Insert video vào database
-        public int P_VideoCamera_Insert(ref int id, int cameraId, DateTime beginDate, DateTime endDate, string videoUri, byte status)
-        {
-            using (var connection = Connection)
-            {
-                connection.Open();
-                string sql = $"cmrs.P_VideoCamera_Insert";
-                try
-                {
-                    var pars = new DynamicParameters();
-                    pars.AddDynamicParams(new
-                    {
-                        Id = id,
-                        CameraId = cameraId,
-                        BeginDate = beginDate,
-                        EndDate = endDate,
-                        VideoUri = videoUri,
-                        Status = status
-                    });
-                    pars.Add("Id", dbType: DbType.Int32, direction: ParameterDirection.Output);
-
-                    var ret = connection.Query<int>(sql: sql, param: pars,
-                     commandType: CommandType.StoredProcedure);
-                    int Id = pars.Get<int?>("Id") ?? 0;
-
-
-                    return Id;
-                }
-                catch (Exception)
-                {
-                    //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
-                }
-                finally
-                {
-                    if (connection.State == ConnectionState.Open) connection.Close();
-                }
-            }
-            return 0;
-        }
-      
     }
 }

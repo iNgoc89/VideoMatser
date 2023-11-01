@@ -1,23 +1,13 @@
 ﻿using FFmpegWebAPI.Models;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection.Metadata;
-using System.Text;
-using System.Threading.Tasks;
 
-
-namespace WorkerVideoCameraService.Services
+namespace FFmpegWebAPI.Services
 {
-    public class WorkVideoService 
+    public class WorkVideoService
     {
         public IOTContext _iOTContext;
         public string txtCmdConcat = string.Empty;
-        
+
         public WorkVideoService(IOTContext iOTContext)
         {
             _iOTContext = iOTContext;
@@ -62,10 +52,10 @@ namespace WorkerVideoCameraService.Services
                 process.StartInfo.Arguments = cmdLine;
                 process.Start();
             }
-         
+
         }
 
-   
+
         public void Refresh(TimeSpan timeSpan, string? fileName)
         {
             if (timeSpan.TotalMinutes == 30)
@@ -94,7 +84,7 @@ namespace WorkerVideoCameraService.Services
                     cmdLine = cmdLine[..^2];
                 }
             }
-         
+
             return cmdLine;
         }
         public void DeleteFile(string filePath)
@@ -104,7 +94,7 @@ namespace WorkerVideoCameraService.Services
                 if (File.Exists(filePath))
                 {
                     File.Delete(filePath);
-               
+
                 }
                 else Debug.WriteLine("File not found");
             }
@@ -112,11 +102,11 @@ namespace WorkerVideoCameraService.Services
             {
                 Debug.WriteLine(ioExp.Message);
             }
-        
+
 
         }
 
-        public string[]? CheckFile(int camId, string ThuMucLay, DateTime beginDate, DateTime endDate) 
+        public string[]? CheckFile(int camId, string ThuMucLay, DateTime beginDate, DateTime endDate)
         {
             var camIdstring = $@"{camId}_*";
             string cmdLine = string.Empty;
@@ -124,7 +114,7 @@ namespace WorkerVideoCameraService.Services
             List<string> listFile = new List<string>();
             String[]? filesReturl = null;
             string[] files = Directory.GetFiles(ThuMucLay, camIdstring, SearchOption.AllDirectories);
-           
+
             foreach (var file in files)
             {
                 using (var stream = File.Open(file, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
@@ -132,7 +122,7 @@ namespace WorkerVideoCameraService.Services
                     if (file.Length > 0)
                     {
                         var cutright = file[..^4];
-                        var cutleft = cutright.Substring(cutright.LastIndexOf('_'), cutright.Length - cutright.LastIndexOf('_'));
+                        var cutleft = cutright[cutright.LastIndexOf('_')..];
 
                         var catleft2 = cutleft[1..];
 
@@ -155,7 +145,7 @@ namespace WorkerVideoCameraService.Services
                     }
                     stream.Dispose();
                 }
-            
+
             }
 
             if (listFile.Count > 0)
@@ -178,7 +168,5 @@ namespace WorkerVideoCameraService.Services
             process.StartInfo = processStartInfo;
             process.Start();
         }
-     
-      
     }
 }
