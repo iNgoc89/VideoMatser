@@ -9,31 +9,18 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
+
 
 namespace WorkerVideoCameraService.Services
 {
-    public class WorkVideoService : IDisposable
+    public class WorkVideoService 
     {
         public IOTContext _iOTContext;
         public string txtCmdConcat = string.Empty;
-        // trường lưu trạng thái Dispose
-        private bool m_Disposed = false;
-
-        private StreamWriter stream;
-
-
-        // Phương thức triển khai từ giao diện
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        public WorkVideoService(IOTContext iOTContext, string filename)
+        
+        public WorkVideoService(IOTContext iOTContext)
         {
             _iOTContext = iOTContext;
-            stream = new StreamWriter(filename, true);
         }
         public void GetVideo(string? fileName, string rtspUrl, string contentRoot)
         {
@@ -112,10 +99,20 @@ namespace WorkerVideoCameraService.Services
         }
         public void DeleteFile(string filePath)
         {
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+            try
             {
-                File.Delete(filePath);
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+               
+                }
+                else Debug.WriteLine("File not found");
             }
+            catch (IOException ioExp)
+            {
+                Debug.WriteLine(ioExp.Message);
+            }
+        
 
         }
 
@@ -156,7 +153,6 @@ namespace WorkerVideoCameraService.Services
                             }
                         }
                     }
-                    stream.Close();
                     stream.Dispose();
                 }
             
@@ -182,33 +178,7 @@ namespace WorkerVideoCameraService.Services
             process.StartInfo = processStartInfo;
             process.Start();
         }
-        protected virtual void Dispose(bool disposing)
-        {
-            // Check to see if Dispose has already been called.
-            if (!this.disposed)
-            {
-                // If disposing equals true, dispose all managed
-                // and unmanaged resources.
-                if (disposing)
-                {
-                    // Dispose managed resources.
-                    component.Dispose();
-                }
-
-                // Call the appropriate methods to clean up
-                // unmanaged resources here.
-                // If disposing is false,
-                // only the following code is executed.
-                CloseHandle(handle);
-                handle = IntPtr.Zero;
-
-                // Note disposing has been done.
-                disposed = true;
-            }
-        }
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-        }
+     
+      
     }
 }
