@@ -36,16 +36,23 @@ namespace FFmpegWebAPI.Controllers
         // GET api/<VideoController>/GID
 
         [HttpGet("{GID}")]
-        public ConcatVideoCamera? Get(Guid GID)
+        public IActionResult Get(Guid GID)
         {
-            var data = _iOTContext?.ConcatVideoCameras?.Where(x => x.GID == GID)?.FirstOrDefault();
-            return data;
+            if (GID != Guid.Empty)
+            {
+                var data = _iOTContext.ConcatVideoCameras.Where(x => x.GID == GID).ToList();
+                if (data.Count > 0)
+                {
+                    return new JsonResult(data);
+                }
+            }
+            return NoContent();
         }
 
         // POST api/<VideoController>
 
         [HttpPost]
-        public VideoReturl Post(Guid GID, int cameraId, string beginDate, string endDate)
+        public IActionResult Post(Guid GID, int cameraId, string beginDate, string endDate)
         {
             VideoReturl videoReturl = new();
             int kq = 0;
@@ -53,7 +60,14 @@ namespace FFmpegWebAPI.Controllers
             DateTime.TryParse(endDate, out DateTime ED);
 
             if (BD > DateTime.MinValue && ED > DateTime.MinValue)
-            { 
+            {
+                //Kiểm tra GID đã tồn tại hay chưa
+                var gid = _iOTContext.ConcatVideoCameras.Any(x => x.GID == GID);
+                if (gid is true)
+                {
+                    videoReturl.ErrMsg = "Đã tồn tại GID!";
+                    return new JsonResult(videoReturl);
+                }
                 //Kiểm tra video tương tự trên hệ thống hay chưa
                 List<ConcatVideoCamera> data = _iOTContext.ConcatVideoCameras.Where(x => x.BeginDate <= BD.AddSeconds(5) && x.BeginDate >= BD.AddSeconds(-5) && x.EndDate <= ED.AddSeconds(5) && x.EndDate >= ED.AddSeconds(-5)).ToList();
                 if (data.Count > 0)
@@ -63,7 +77,7 @@ namespace FFmpegWebAPI.Controllers
                     videoReturl.UrlPath = video.VideoUri;
                     videoReturl.ErrMsg = "Đã tồn tại video trên hệ thống!";
 
-                    return videoReturl;
+                    return new JsonResult(videoReturl);
                 }
 
                 //Kiểm tra có file phù hợp để ghép hay không
@@ -86,16 +100,15 @@ namespace FFmpegWebAPI.Controllers
                                 videoReturl.UrlPath = $@"~\{urlLuu.Ten}\{dateNow}\{GID}.mp4";
                                 videoReturl.ErrMsg = "Ghép video thành công!";
 
-                                return videoReturl;
+                                return new JsonResult(videoReturl);
                             }
                           
 
                         }
                         else
                         {
-                            videoReturl.Id = 0;
-                            videoReturl.UrlPath = null;
                             videoReturl.ErrMsg = "Không có video phù hợp. Xem lại thời điểm lấy video!";
+                            return new JsonResult(videoReturl);
                         }
                     }
 
@@ -107,7 +120,7 @@ namespace FFmpegWebAPI.Controllers
                
             }
 
-            return videoReturl;
+            return NoContent();
         }
 
 
