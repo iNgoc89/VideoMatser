@@ -99,7 +99,7 @@ namespace FFmpegWebAPI.Controllers
                             {
                                 var dateNow = DateTime.Now.ToString("yyyyMM");
                                 videoReturl.Id = kq;
-                                videoReturl.UrlPath = $"~/{ThuMucVirtual}/{urlLay.Ten}/{DateTime.Now.ToString("yyyyMM")}/{GID}.mp4";
+                                videoReturl.UrlPath = $"~/{ThuMucVirtual}/{DateTime.Now.ToString("yyyyMM")}/{GID}.mp4";
                                 videoReturl.ErrMsg = "Ghép video thành công!";
 
                                 return new JsonResult(videoReturl);
