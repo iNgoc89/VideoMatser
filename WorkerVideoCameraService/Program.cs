@@ -24,9 +24,22 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddScoped<WorkVideoService>();
         services.AddScoped<IOTService>();
 
+        //add windown service
+        services.AddWindowsService();
+        
+        
         services.AddDbContext<IOTContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("IOTConnection")));
      
+    })
+    .ConfigureLogging((context, logging) => {
+        var env = context.HostingEnvironment;
+        var config = context.Configuration.GetSection("Logging");
+       
+        logging.AddConfiguration(config);
+        logging.AddConsole();
+      
+        logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
     })
     .Build();
 

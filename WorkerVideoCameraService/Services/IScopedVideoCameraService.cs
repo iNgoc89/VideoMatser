@@ -27,10 +27,10 @@ namespace WorkerVideoCameraService.Services
         public int idNew = 0;
         public int typeCamera = 0;
         public long? ThuMucId = null;
-        public static string? TenThuMuc = string.Empty;
         public static string? ffmpeg = string.Empty;
         public static string? DuongDanFile = string.Empty;
         public readonly DateTime timeRun = DateTime.Now;
+        public long? ThuMucLay = null;
         public ScopedProcessingService(IOTContext iOTContext, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
         {
             _iOTContext = iOTContext;
@@ -40,12 +40,12 @@ namespace WorkerVideoCameraService.Services
 
             ffmpeg = _configuration["FFmpeg:Url"];
             typeCamera = int.Parse(_configuration["TypeCamera:Type"] ?? "2");
-            TenThuMuc = _configuration["ThuMucNghiepVu:VideoCamera"];
+            ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoCamera"] ?? "10043");
         }
 
         public async Task RunApp(CancellationToken stoppingToken)
         {
-            long idThuMuc = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, TenThuMuc);
+            long? idThuMuc = ThuMucLay;
             var cameras = _iOTContext.Cameras.Where(x => x.Type == typeCamera).ToList();
             if (idThuMuc > 0)
             {
@@ -63,8 +63,6 @@ namespace WorkerVideoCameraService.Services
 
                             //Lưu video
                             _workVideo.GetVideo(ffmpeg,cam.RtspUrl, DuongDanFile);
-
-                            //P_VideoCamera_Insert(ref idNew, cam.Id, DateTime.Now, DateTime.Now.AddSeconds(5), DuongDanFile, 20);
                         }
                         await Task.Delay(5000, stoppingToken);
 

@@ -22,7 +22,7 @@ namespace WorkerVideoCameraService.Services
         public XmhtService _xmhtService;
         public WorkVideoService _workVideo;
         public long? ThuMucId = null;
-        public static string? TenThuMuc = string.Empty;
+        public long? ThuMucLay = null;
         public static string? DuongDanFile = string.Empty;
         public double TimeDelete = 0;
         public DeleteProcessingService(IHostEnvironment environment, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
@@ -30,13 +30,13 @@ namespace WorkerVideoCameraService.Services
             _configuration = configuration;
             _environment = environment;
             _xmhtService = xmhtService;
-            TenThuMuc = _configuration["ThuMucNghiepVu:VideoCamera"];
+            ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoCamera"] ?? "10043");
             TimeDelete = double.Parse(_configuration["TimeDelete:Time"] ?? "5");
             _workVideo = workVideo;
         }
         public async Task RunDeleteFile(CancellationToken stoppingToken)
         {
-            long idThuMuc = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, TenThuMuc);
+            long? idThuMuc = ThuMucLay;
             if (idThuMuc > 0)
             {
                 var kq = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMuc).Result;

@@ -21,11 +21,12 @@ namespace WorkerVideoCameraService.Services
         public IOTService _iOTService;
         public WorkVideoService _workVideoService;
         public long? ThuMucId = null;
-        public static string? ThuMucLay = string.Empty;
+        public long? ThuMucLay = null;
         public static string? DuongDanFileLuu = string.Empty;
         public static string? DuongDanFileTXT = string.Empty;
-        public static string? ThuMucLuu = string.Empty;
-        public static string? ThuMucTxt = string.Empty;
+        public static string? ThuMucVirtual = string.Empty;
+        public long? ThuMucLuu = null;
+        public long? ThuMucTxt = null;
         public static string? ffmpeg = string.Empty;
 
         public ConcatProcessingService(IHostEnvironment environment, XmhtService xmhtService, IOTService iOTService,
@@ -37,17 +38,18 @@ namespace WorkerVideoCameraService.Services
             _iOTContext = iOTContext;
             _workVideoService = workVideoService;
             _iOTService = iOTService;
-            ThuMucLay = _configuration["ThuMucNghiepVu:VideoCamera"];
-            ThuMucLuu = _configuration["ThuMucNghiepVu:ConcatVideoCamera"];
-            ThuMucTxt = _configuration["ThuMucNghiepVu:CmdConcat"];
+            ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoCamera"] ?? "10043");
+            ThuMucLuu = long.Parse(_configuration["ThuMucNghiepVu:ConcatVideoCamera"] ?? "10046");
+            ThuMucTxt = long.Parse(_configuration["ThuMucNghiepVu:CmdConcat"] ?? "10047");
+            ThuMucVirtual = _configuration["ThuMucNghiepVu:ThuMucVirtual"];
             ffmpeg = _configuration["FFmpeg:Url"];
 
         }
         public async Task RunConcatFile(CancellationToken stoppingToken)
         {
-            long idThuMucLay = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, ThuMucLay);
-            long idThuMucLuu = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, ThuMucLuu);
-            long idThuMucTxt = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, ThuMucTxt);
+            long? idThuMucLay = ThuMucLay;
+            long? idThuMucLuu = ThuMucLuu;
+            long? idThuMucTxt = ThuMucTxt;
             if (idThuMucLay > 0 && idThuMucLuu > 0 && idThuMucTxt > 0)
             {
                 var urlLay = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLay).Result;
@@ -98,7 +100,11 @@ namespace WorkerVideoCameraService.Services
                                     if (File.Exists(DuongDanFileLuu))
                                     {
                                         //Update table ConcatVideoCamera
-                                        _iOTService.P_ConcatVideoCamera_Update(item.Id, DuongDanFileLuu, 20);
+                                        if (!string.IsNullOrEmpty(ThuMucVirtual))
+                                        {
+                                            var videoUri = $"~/{ThuMucVirtual}/" + DateTime.Now.ToString("yyyyMM") + "/" + fileName;
+                                            _iOTService.P_ConcatVideoCamera_Update(item.Id, videoUri, 20);
+                                        } 
                                     }
                                 }
                                 else

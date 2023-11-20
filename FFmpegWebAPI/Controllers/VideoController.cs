@@ -18,9 +18,10 @@ namespace FFmpegWebAPI.Controllers
         public WorkVideoService _workVideoService;
         public XmhtService _xmhtService;
         public IConfiguration _configuration;
-        public static string? ThuMucLay = string.Empty;
-        public static string? ThuMucLuu = string.Empty;
+        public long? ThuMucLay = null;
+        public long? ThuMucLuu = null;
         public long? ThuMucId = null;
+        public string? ThuMucVirtual = string.Empty;
         public VideoController(IOTContext iOTContext, IOTService iOTService, WorkVideoService workVideoService, XmhtService xmhtService, IConfiguration configuration)
         {
             _iOTContext = iOTContext;
@@ -29,8 +30,9 @@ namespace FFmpegWebAPI.Controllers
             _xmhtService = xmhtService;
             _configuration = configuration;
 
-            ThuMucLay = _configuration["ThuMucNghiepVu:VideoCamera"];
-            ThuMucLuu = _configuration["ThuMucNghiepVu:ConcatVideoCamera"];
+            ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoCamera"] ?? "10043");
+            ThuMucLuu = long.Parse(_configuration["ThuMucNghiepVu:ConcatVideoCamera"] ?? "1046");
+            ThuMucVirtual = _configuration["ThuMucNghiepVu:ThuMucVirtual"];
         }
 
         // GET api/<VideoController>/GID
@@ -81,8 +83,8 @@ namespace FFmpegWebAPI.Controllers
                 }
 
                 //Kiểm tra có file phù hợp để ghép hay không
-                long idThuMucLay = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, ThuMucLay);
-                long idThuMucLuu = _xmhtService.P_ThuMuc_LayTMNgiepVu(null, ref ThuMucId, ThuMucLuu);
+                long? idThuMucLay = ThuMucLay;
+                long? idThuMucLuu = ThuMucLuu;
                 if (idThuMucLay > 0 && idThuMucLuu > 0)
                 {
                     var urlLay = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLay).Result;
@@ -97,7 +99,7 @@ namespace FFmpegWebAPI.Controllers
                             {
                                 var dateNow = DateTime.Now.ToString("yyyyMM");
                                 videoReturl.Id = kq;
-                                videoReturl.UrlPath = $@"~\{urlLuu.Ten}\{dateNow}\{GID}.mp4";
+                                videoReturl.UrlPath = $"~/{ThuMucVirtual}/{urlLay.Ten}/{DateTime.Now.ToString("yyyyMM")}/{GID}.mp4";
                                 videoReturl.ErrMsg = "Ghép video thành công!";
 
                                 return new JsonResult(videoReturl);
