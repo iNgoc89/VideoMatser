@@ -28,6 +28,7 @@ namespace WorkerVideoCameraService.Services
         public long? ThuMucLuu = null;
         public long? ThuMucTxt = null;
         public static string? ffmpeg = string.Empty;
+        public string? Domain = string.Empty;
 
         public ConcatProcessingService(IHostEnvironment environment, XmhtService xmhtService, IOTService iOTService,
             IConfiguration configuration, IOTContext iOTContext, WorkVideoService workVideoService)
@@ -43,7 +44,7 @@ namespace WorkerVideoCameraService.Services
             ThuMucTxt = long.Parse(_configuration["ThuMucNghiepVu:CmdConcat"] ?? "10047");
             ThuMucVirtual = _configuration["ThuMucNghiepVu:ThuMucVirtual"];
             ffmpeg = _configuration["FFmpeg:Url"];
-
+            Domain = _configuration["Domain:Value"];
         }
         public async Task RunConcatFile(CancellationToken stoppingToken)
         {
@@ -90,28 +91,41 @@ namespace WorkerVideoCameraService.Services
                                    
                                     continue;
                                 }
-                                var checkFile = _workVideoService.CheckFile(item.CameraId, urlLay.DuongDan, item.BeginDate, item.EndDate);
-                                if (checkFile?.Length > 0)
-                                {
-                                    //Concat Video
-                                    _workVideoService.ConcatVideo(item.CameraId, urlLay.DuongDan, DuongDanFileTXT, item.BeginDate, item.EndDate, ffmpeg, DuongDanFileLuu);
 
-                                    //Check file tồn tại
-                                    if (File.Exists(DuongDanFileLuu))
-                                    {
-                                        //Update table ConcatVideoCamera
-                                        if (!string.IsNullOrEmpty(ThuMucVirtual))
-                                        {
-                                            var videoUri = $"~/{ThuMucVirtual}/" + DateTime.Now.ToString("yyyyMM") + "/" + fileName;
-                                            _iOTService.P_ConcatVideoCamera_Update(item.Id, videoUri, 20);
-                                        } 
-                                    }
-                                }
-                                else
+
+                                long thuMucConId = 0;
+                                var idThuMucCon = _xmhtService.P_ThuMuc_LayTheoThuMucCha(null, idThuMucLuu, item.CameraId.ToString(), ref thuMucConId);
+                                if (idThuMucCon > 0)
                                 {
-                                    //Tăng status + 1 -> 3 thì dừng
-                                    _iOTService.P_ConcatVideoCamera_UpdateStatus(item.Id, item.Status + 1);
+                                    var thuMucLayLuu = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucCon).Result;
+                                    if (thuMucLayLuu != null)
+                                    {
+                                        var checkFile = _workVideoService.CheckFile(item.CameraId, thuMucLayLuu.DuongDan, item.BeginDate, item.EndDate);
+                                        if (checkFile?.Length > 0)
+                                        {
+                                            //Concat Video
+                                            _workVideoService.ConcatVideo(item.CameraId, thuMucLayLuu.DuongDan, DuongDanFileTXT, item.BeginDate, item.EndDate, ffmpeg, DuongDanFileLuu);
+
+                                            //Check file tồn tại
+                                            if (File.Exists(DuongDanFileLuu))
+                                            {
+                                                //Update table ConcatVideoCamera
+                                                if (!string.IsNullOrEmpty(ThuMucVirtual))
+                                                {
+                                                    var videoUri = $"{Domain}/{ThuMucVirtual}/" + DateTime.Now.ToString("yyyyMM") + "/" + fileName;
+                                                    _iOTService.P_ConcatVideoCamera_Update(item.Id, videoUri, 20);
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            //Tăng status + 1 -> 3 thì dừng
+                                            _iOTService.P_ConcatVideoCamera_UpdateStatus(item.Id, item.Status + 1);
+                                        }
+                                    }
+                                  
                                 }
+                               
 
 
 

@@ -160,5 +160,41 @@ namespace FFmpegWebAPI.Services
             }
             return 0;
         }
+
+        public long P_ThuMuc_LayTheoThuMucCha(Guid? guid, long? thuMucChaID, string tenThuMucCon, ref long thuMucId)
+        {
+            using (var connection = Connection)
+            {
+                connection.Open();
+                string sql = $"apps.p_ThuMuc_LayTheoThuMucCha";
+                try
+                {
+                    var pars = new DynamicParameters();
+                    pars.AddDynamicParams(new
+                    {
+                        GID = guid,
+                        ThuMucChaID = thuMucChaID,
+                        TenThuMucCon = tenThuMucCon
+                    });
+                    pars.Add("ThuMucId", dbType: DbType.Int64, direction: ParameterDirection.Output);
+
+                    var ret = connection.Query<long>(sql: sql, param: pars,
+                     commandType: CommandType.StoredProcedure);
+                    long Id = pars.Get<long?>("ThuMucId") ?? 0;
+
+
+                    return Id;
+                }
+                catch (Exception)
+                {
+                    //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                }
+                finally
+                {
+                    if (connection.State == ConnectionState.Open) connection.Close();
+                }
+            }
+            return 0;
+        }
     }
 }

@@ -31,6 +31,8 @@ namespace WorkerVideoCameraService.Services
         public static string? DuongDanFile = string.Empty;
         public readonly DateTime timeRun = DateTime.Now;
         public long? ThuMucLay = null;
+      
+       
         public ScopedProcessingService(IOTContext iOTContext, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
         {
             _iOTContext = iOTContext;
@@ -41,13 +43,15 @@ namespace WorkerVideoCameraService.Services
             ffmpeg = _configuration["FFmpeg:Url"];
             typeCamera = int.Parse(_configuration["TypeCamera:Type"] ?? "2");
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoCamera"] ?? "10043");
+            
         }
 
         public async Task RunApp(CancellationToken stoppingToken)
-        {
+        {   
+            
             long? idThuMuc = ThuMucLay;
             var cameras = _iOTContext.Cameras.Where(x => x.Type == typeCamera).ToList();
-            if (idThuMuc > 0)
+            if (idThuMuc > 0 && cameras.Count > 0)
             {
                 var kq = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMuc).Result;
                 if (kq != null)
@@ -55,14 +59,24 @@ namespace WorkerVideoCameraService.Services
                   
                     while (!stoppingToken.IsCancellationRequested)
                     {
+                     
                         foreach (var cam in cameras)
                         {
-                            var fileName = cam.Id + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
-                         
-                            DuongDanFile = Path.Combine(kq.DuongDan, fileName);
+                            long? ThuMucWSID = 0;
+                            string ThuMucDuongDan = string.Empty;
+                            var thuMuc = _xmhtService.TaoThuMuc(null, idThuMuc, cam.Id.ToString(), ref ThuMucWSID, ref ThuMucDuongDan);
 
-                            //Lưu video
-                            _workVideo.GetVideo(ffmpeg,cam.RtspUrl, DuongDanFile);
+                            var fileName = cam.Id + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
+                            var camId = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc).Result;
+                            if (camId != null && thuMuc > 0)
+                            {
+                                DuongDanFile = Path.Combine(camId.DuongDan, fileName);
+
+                                //Lưu video
+                                _workVideo.GetVideo(ffmpeg, cam.RtspUrl, DuongDanFile);
+                            }
+
+                       
                         }
                         await Task.Delay(5000, stoppingToken);
 

@@ -47,7 +47,7 @@ namespace WorkerVideoCameraService.Services
                  
                     while (!stoppingToken.IsCancellationRequested)
                     {
-                        string[] files = Directory.GetFiles(ThuMucDuongDan);
+                        string[] files = Directory.GetFiles(ThuMucDuongDan, "*", SearchOption.AllDirectories);
                         foreach (string file in files)
                         {
                             if (file.Length > 0)

@@ -22,6 +22,7 @@ namespace FFmpegWebAPI.Controllers
         public long? ThuMucLuu = null;
         public long? ThuMucId = null;
         public string? ThuMucVirtual = string.Empty;
+        public string? Domain = string.Empty;
         public VideoController(IOTContext iOTContext, IOTService iOTService, WorkVideoService workVideoService, XmhtService xmhtService, IConfiguration configuration)
         {
             _iOTContext = iOTContext;
@@ -33,6 +34,7 @@ namespace FFmpegWebAPI.Controllers
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoCamera"] ?? "10043");
             ThuMucLuu = long.Parse(_configuration["ThuMucNghiepVu:ConcatVideoCamera"] ?? "1046");
             ThuMucVirtual = _configuration["ThuMucNghiepVu:ThuMucVirtual"];
+            Domain = _configuration["Domain:Value"];
         }
 
         // GET api/<VideoController>/GID
@@ -99,7 +101,7 @@ namespace FFmpegWebAPI.Controllers
                             {
                                 var dateNow = DateTime.Now.ToString("yyyyMM");
                                 videoReturl.Id = kq;
-                                videoReturl.UrlPath = $"~/{ThuMucVirtual}/{DateTime.Now.ToString("yyyyMM")}/{GID}.mp4";
+                                videoReturl.UrlPath = $"{Domain}/{ThuMucVirtual}/{DateTime.Now.ToString("yyyyMM")}/{GID}.mp4";
                                 videoReturl.ErrMsg = "Ghép video thành công!";
 
                                 return new JsonResult(videoReturl);
