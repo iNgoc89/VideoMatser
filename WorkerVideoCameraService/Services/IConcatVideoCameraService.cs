@@ -93,7 +93,7 @@ namespace WorkerVideoCameraService.Services
 
 
                                 long thuMucConId = 0;
-                                var idThuMucCon = _xmhtService.P_ThuMuc_LayTheoThuMucCha(null, idThuMucLuu, item.CameraId.ToString(), ref thuMucConId);
+                                var idThuMucCon = _xmhtService.P_ThuMuc_LayTheoThuMucCha(null, idThuMucLay, item.CameraId.ToString(), ref thuMucConId);
                                 if (idThuMucCon > 0)
                                 {
                                     var thuMucLayLuu = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucCon).Result;
@@ -111,7 +111,7 @@ namespace WorkerVideoCameraService.Services
                                                 //Update table ConcatVideoCamera
                                                 if (!string.IsNullOrEmpty(ThuMucVirtual))
                                                 {
-                                                    var videoUri = $"~/{ThuMucVirtual}/" + DateTime.Now.ToString("yyyyMM") + "/" + fileName;
+                                                    var videoUri = $"/{ThuMucVirtual}/" + DateTime.Now.ToString("yyyyMM") + "/" + fileName;
                                                     _iOTService.P_ConcatVideoCamera_Update(item.Id, videoUri, 20);
                                                 }
                                             }

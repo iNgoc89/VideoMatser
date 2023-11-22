@@ -34,7 +34,7 @@ namespace FFmpegWebAPI.Controllers
             _configuration = configuration;
 
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoCamera"] ?? "10043");
-            ThuMucLuu = long.Parse(_configuration["ThuMucNghiepVu:ConcatVideoCamera"] ?? "1046");
+            ThuMucLuu = long.Parse(_configuration["ThuMucNghiepVu:ConcatVideoCamera"] ?? "10046");
             ThuMucVirtual = _configuration["ThuMucNghiepVu:ThuMucVirtual"];
 
         }
@@ -57,25 +57,32 @@ namespace FFmpegWebAPI.Controllers
                     return new JsonResult(message);
                 }
             }
-            
+
             return NoContent();
         }
 
         [HttpPost("ConcatVideo")]
-        public IActionResult PostConcat([FromBody]VideoConcatRequest videoConcatRequest)
+        public IActionResult PostConcat([FromBody] VideoConcatRequest videoConcatRequest)
         {
             VideoReturl videoReturl = new();
             int kq = 0;
-      
+
 
             if (videoConcatRequest.BeginDate > DateTime.MinValue && videoConcatRequest.EndDate > DateTime.MinValue)
             {
                 //Kiểm tra GID đã tồn tại hay chưa
-                var gid = _iOTContext.ConcatVideoCameras.Any(x => x.GID == videoConcatRequest.GID);
-                if (gid is true)
+                List<ConcatVideoCamera> gid = _iOTContext.ConcatVideoCameras.Where(x => x.GID == videoConcatRequest.GID).ToList();
+                if (gid.Count > 0)
                 {
+                    var kqGID = gid.First();
+
+                    videoReturl.Id = kqGID.Id;
+                    videoReturl.UrlPath = kqGID.VideoUri;
                     videoReturl.ErrMsg = "Đã tồn tại GID!";
+
                     return new JsonResult(videoReturl);
+
+
                 }
                 //Kiểm tra video tương tự trên hệ thống hay chưa
                 List<ConcatVideoCamera> data = _iOTContext.ConcatVideoCameras.Where(x => x.BeginDate <= videoConcatRequest.BeginDate.AddSeconds(5) && x.BeginDate >= videoConcatRequest.BeginDate.AddSeconds(-5) && x.EndDate <= videoConcatRequest.EndDate.AddSeconds(5) && x.EndDate >= videoConcatRequest.EndDate.AddSeconds(-5)).ToList();
@@ -113,7 +120,7 @@ namespace FFmpegWebAPI.Controllers
                                     var dateNow = DateTime.Now.ToString("yyyyMM");
                                     videoReturl.Id = kq;
                                     videoReturl.GID = videoConcatRequest.GID;
-                                    videoReturl.UrlPath = $"~/{ThuMucVirtual}/{DateTime.Now.ToString("yyyyMM")}/{videoConcatRequest.GID}.mp4";
+                                    videoReturl.UrlPath = $"/{ThuMucVirtual}/{DateTime.Now.ToString("yyyyMM")}/{videoConcatRequest.GID}.mp4";
                                     videoReturl.ErrMsg = "Tạo lệnh ghép thành công!";
 
                                     return new JsonResult(videoReturl);
@@ -136,7 +143,7 @@ namespace FFmpegWebAPI.Controllers
                 {
                     Debug.WriteLine(ex.Message);
                 }
-              
+
 
 
 
