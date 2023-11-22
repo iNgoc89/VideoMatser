@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Hosting;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,9 +10,11 @@ namespace WorkerVideoCameraService.Services
     public class ConcatVideoCameraService : BackgroundService
     {
         public IServiceProvider _services { get; }
-        public ConcatVideoCameraService(IServiceProvider services)
+        private readonly IHostApplicationLifetime _hostApplicationLifetime;
+        public ConcatVideoCameraService(IServiceProvider services, IHostApplicationLifetime hostApplicationLifetime)
         {
             _services = services;
+            _hostApplicationLifetime = hostApplicationLifetime;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -23,11 +26,23 @@ namespace WorkerVideoCameraService.Services
         {
             using (var scope = _services.CreateScope())
             {
-                var scopedProcessingService =
-                    scope.ServiceProvider
-                        .GetRequiredService<IConcatVideoCameraService>();
+                try
+                {
+                    var scopedProcessingService =
+                   scope.ServiceProvider
+                       .GetRequiredService<IConcatVideoCameraService>();
 
-                await scopedProcessingService.RunConcatFile(stoppingToken);
+                    await scopedProcessingService.RunConcatFile(stoppingToken);
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+                finally
+                {
+                    _hostApplicationLifetime.StopApplication();
+                }
+              
             }
         }
 

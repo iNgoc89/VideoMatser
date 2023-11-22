@@ -80,8 +80,8 @@ namespace WorkerVideoCameraService.Services
                         }
                         await Task.Delay(5000, stoppingToken);
 
-                        TimeSpan totalTimeRun = DateTime.Now.Subtract(timeRun);
-                        _workVideo.Refresh(totalTimeRun, ffmpeg);
+                        //TimeSpan totalTimeRun = DateTime.Now.Subtract(timeRun);
+                        //_workVideo.Refresh(totalTimeRun, ffmpeg);
                     }
                  
                 }

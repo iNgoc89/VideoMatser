@@ -18,9 +18,12 @@ namespace FFmpegWebAPI.Data
         }
         public async Task Invoke(HttpContext httpContext)
         {
-            bool success = httpContext.Request.Headers.TryGetValue
+            
+            bool success = httpContext.Request.Headers.TryGetValue 
             (API_KEY, out var apiKeyFromHttpHeader);
-            if (!success)
+            //success = true;
+            //apiKeyFromHttpHeader = "813713-9154168-688634-378689";
+            if (!success )
             {
                 httpContext.Response.StatusCode = 401;
                 await httpContext.Response.WriteAsync("Api Key không hợp lệ!");

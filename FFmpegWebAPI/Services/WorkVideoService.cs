@@ -113,21 +113,12 @@ namespace FFmpegWebAPI.Services
         }
         public void DeleteFile(string filePath)
         {
-            try
+            FileInfo file = new FileInfo(filePath);
+            bool fileIsOpen = IsFileLocked(file);
+            if (!fileIsOpen)
             {
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-
-                }
-                else Debug.WriteLine("File not found");
+                File.Delete(filePath);
             }
-            catch (IOException ioExp)
-            {
-                Debug.WriteLine(ioExp.Message);
-            }
-
-
         }
 
         public string[]? CheckFile(int camId, string ThuMucLay, DateTime beginDate, DateTime endDate)
@@ -167,7 +158,7 @@ namespace FFmpegWebAPI.Services
                             }
                         }
                     }
-                    stream.Dispose();
+                    stream.Close();
                 }
 
             }
@@ -178,6 +169,28 @@ namespace FFmpegWebAPI.Services
             }
 
             return filesReturl;
+        }
+        protected virtual bool IsFileLocked(FileInfo file)
+        {
+            try
+            {
+                using (FileStream stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    stream.Close();
+                }
+            }
+            catch (IOException)
+            {
+                //the file is unavailable because it is:
+                //still being written to
+                //or being processed by another thread
+                //or does not exist (has already been processed)
+             
+                return true;
+            }
+
+            //file is not locked
+            return false;
         }
         public void TestCMD(string contentRoot)
         {

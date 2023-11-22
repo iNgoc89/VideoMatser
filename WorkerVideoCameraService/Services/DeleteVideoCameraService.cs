@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Hosting;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,9 +10,11 @@ namespace WorkerVideoCameraService.Services
     public class DeleteVideoCameraService : BackgroundService
     {
         public IServiceProvider _services { get; }
-        public DeleteVideoCameraService(IServiceProvider services)
+        private readonly IHostApplicationLifetime _hostApplicationLifetime;
+        public DeleteVideoCameraService(IServiceProvider services, IHostApplicationLifetime hostApplicationLifetime)
         {
             _services = services;
+            _hostApplicationLifetime = hostApplicationLifetime;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -23,11 +26,23 @@ namespace WorkerVideoCameraService.Services
         {
             using (var scope = _services.CreateScope())
             {
-                var scopedProcessingService =
+                try
+                {
+                    var scopedProcessingService =
                     scope.ServiceProvider
-                        .GetRequiredService<IDeleteVideoCameraService>();
+                 .GetRequiredService<IDeleteVideoCameraService>();
 
-                await scopedProcessingService.RunDeleteFile(stoppingToken);
+                    await scopedProcessingService.RunDeleteFile(stoppingToken);
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+                finally
+                {
+                    _hostApplicationLifetime.StopApplication();
+                }
+         
             }
         }
 

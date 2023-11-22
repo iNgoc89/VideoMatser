@@ -28,7 +28,6 @@ namespace WorkerVideoCameraService.Services
         public long? ThuMucLuu = null;
         public long? ThuMucTxt = null;
         public static string? ffmpeg = string.Empty;
-        public string? Domain = string.Empty;
 
         public ConcatProcessingService(IHostEnvironment environment, XmhtService xmhtService, IOTService iOTService,
             IConfiguration configuration, IOTContext iOTContext, WorkVideoService workVideoService)
@@ -44,7 +43,7 @@ namespace WorkerVideoCameraService.Services
             ThuMucTxt = long.Parse(_configuration["ThuMucNghiepVu:CmdConcat"] ?? "10047");
             ThuMucVirtual = _configuration["ThuMucNghiepVu:ThuMucVirtual"];
             ffmpeg = _configuration["FFmpeg:Url"];
-            Domain = _configuration["Domain:Value"];
+          
         }
         public async Task RunConcatFile(CancellationToken stoppingToken)
         {
@@ -112,7 +111,7 @@ namespace WorkerVideoCameraService.Services
                                                 //Update table ConcatVideoCamera
                                                 if (!string.IsNullOrEmpty(ThuMucVirtual))
                                                 {
-                                                    var videoUri = $"{Domain}/{ThuMucVirtual}/" + DateTime.Now.ToString("yyyyMM") + "/" + fileName;
+                                                    var videoUri = $"~/{ThuMucVirtual}/" + DateTime.Now.ToString("yyyyMM") + "/" + fileName;
                                                     _iOTService.P_ConcatVideoCamera_Update(item.Id, videoUri, 20);
                                                 }
                                             }

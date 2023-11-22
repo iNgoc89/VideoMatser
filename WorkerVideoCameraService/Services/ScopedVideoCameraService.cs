@@ -9,11 +9,13 @@ namespace WorkerVideoCameraService.Services
     public class ScopedVideoCameraService : BackgroundService
     {
         public IServiceProvider _services { get; }
-        public ScopedVideoCameraService(IServiceProvider services)
+        private readonly IHostApplicationLifetime _hostApplicationLifetime;
+        public ScopedVideoCameraService(IServiceProvider services, IHostApplicationLifetime hostApplicationLifetime)
         {
             _services = services;
+            _hostApplicationLifetime = hostApplicationLifetime;
         }
-       
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             await RunApp(stoppingToken);
@@ -23,11 +25,23 @@ namespace WorkerVideoCameraService.Services
         {
             using (var scope = _services.CreateScope())
             {
-                var scopedProcessingService =
+                try
+                {
+                    var scopedProcessingService =
                     scope.ServiceProvider
-                        .GetRequiredService<IScopedVideoCameraService>();
+                     .GetRequiredService<IScopedVideoCameraService>();
 
-                await scopedProcessingService.RunApp(stoppingToken);
+                    await scopedProcessingService.RunApp(stoppingToken);
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+                finally
+                {
+                    _hostApplicationLifetime.StopApplication();
+                }
+             
             }
         }
 
