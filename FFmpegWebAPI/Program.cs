@@ -30,7 +30,8 @@ internal class Program
         builder.Services.AddScoped<IOTService>();
         builder.Services.AddScoped<WorkVideoService>();
         builder.Services.AddScoped<XmhtService>();
-
+       
+           
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -39,6 +40,7 @@ internal class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+       
         app.UseMiddleware<CustomApiKeyMiddleware>();
         app.UseStaticFiles();
         app.UseHttpsRedirection();

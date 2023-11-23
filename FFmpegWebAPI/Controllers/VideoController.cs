@@ -96,6 +96,16 @@ namespace FFmpegWebAPI.Controllers
                     return new JsonResult(videoReturl);
                 }
 
+                //Kiểm tra cameraId có tồn tại hay ko
+                var checkCam = _iOTContext.Cameras.Where(x => x.Id == videoConcatRequest.CameraId).ToList();
+                if (checkCam.Count == 0)
+                {
+
+                    videoReturl.ErrMsg = "Camera không tồn tại trên hệ thống!";
+
+                    return new JsonResult(videoReturl);
+                }
+
                 //Kiểm tra có file phù hợp để ghép hay không
                 try
                 {

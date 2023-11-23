@@ -40,7 +40,7 @@ IHost host = Host.CreateDefaultBuilder(args)
         logging.AddConsole();
       
         logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
-        logging.AddFilter("System.IO.IOException", LogLevel.None);
+       
     })
     .Build();
 
