@@ -30,13 +30,13 @@ namespace WorkerVideoCameraService.Services
                 {
                     var scopedProcessingService =
                     scope.ServiceProvider
-                 .GetRequiredService<IDeleteVideoCameraService>();
+                    .GetRequiredService<IDeleteVideoCameraService>();
 
                     await scopedProcessingService.RunDeleteFile(stoppingToken);
                 }
-                catch (Exception)
+                catch 
                 {
-                    throw;
+                    
                 }
                 finally
                 {

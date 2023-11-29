@@ -34,9 +34,9 @@ namespace WorkerVideoCameraService.Services
 
                     await scopedProcessingService.RunConcatFile(stoppingToken);
                 }
-                catch (Exception)
+                catch 
                 {
-                    throw;
+                   
                 }
                 finally
                 {

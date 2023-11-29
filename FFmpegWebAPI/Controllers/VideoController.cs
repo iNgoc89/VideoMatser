@@ -136,6 +136,8 @@ namespace FFmpegWebAPI.Controllers
                                     return new JsonResult(videoReturl);
                                 }
 
+                                videoReturl.ErrMsg = "Không insert được db";
+                                return new JsonResult(videoReturl);
 
                             }
                             else
@@ -145,17 +147,21 @@ namespace FFmpegWebAPI.Controllers
                             }
                         }
 
-
+                        videoReturl.ErrMsg = "Không lấy được thư mục";
+                        return new JsonResult(videoReturl);
 
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(ex.Message);
+
+                    videoReturl.ErrMsg = ex.Message;
+                    return new JsonResult(videoReturl);
                 }
 
 
-
+                videoReturl.ErrMsg = "Lỗi thời gian!";
+                return new JsonResult(videoReturl);
 
             }
 

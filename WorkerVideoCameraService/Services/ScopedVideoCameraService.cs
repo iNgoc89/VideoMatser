@@ -33,9 +33,9 @@ namespace WorkerVideoCameraService.Services
 
                     await scopedProcessingService.RunApp(stoppingToken);
                 }
-                catch (Exception)
+                catch
                 {
-                    throw;
+                    
                 }
                 finally
                 {

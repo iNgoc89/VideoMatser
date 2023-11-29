@@ -14,7 +14,7 @@ namespace FFmpegWebAPI.Services
         }
         public void GetVideo(string? fileName, string rtspUrl, string contentRoot)
         {
-            string cmdLine = $@"-t 5 -rtsp_transport tcp -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
+            string cmdLine = $@"-t 5 -rtsp_transport tcp -timeout 30000 -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
 
             Process process = new();
             process.StartInfo.FileName = fileName;
