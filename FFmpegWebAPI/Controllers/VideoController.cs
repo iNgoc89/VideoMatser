@@ -130,7 +130,7 @@ namespace FFmpegWebAPI.Controllers
                                     var dateNow = DateTime.Now.ToString("yyyyMM");
                                     videoReturl.Id = kq;
                                     videoReturl.GID = videoConcatRequest.GID;
-                                    videoReturl.UrlPath = $"/{ThuMucVirtual}/{DateTime.Now.ToString("yyyyMM")}/{videoConcatRequest.GID}.mp4";
+                                   //videoReturl.UrlPath = $"/{ThuMucVirtual}/{DateTime.Now.ToString("yyyyMM")}/{videoConcatRequest.GID}.mp4";
                                     videoReturl.ErrMsg = "Tạo lệnh ghép thành công!";
 
                                     return new JsonResult(videoReturl);
