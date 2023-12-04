@@ -1,6 +1,6 @@
 ﻿using Dapper;
-using FFmpegWebAPI.Models;
-using FFmpegWebAPI.Services;
+using MetaData.Context;
+using MetaData.Services;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -9,6 +9,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace WorkerVideoCameraService.Services
@@ -29,6 +30,7 @@ namespace WorkerVideoCameraService.Services
         public long? ThuMucId = null;
         public static string? ffmpeg = string.Empty;
         public static string? DuongDanFile = string.Empty;
+        public static string TimeOut = string.Empty;
         public readonly DateTime timeRun = DateTime.Now;
         public long? ThuMucLay = null;
       
@@ -43,28 +45,26 @@ namespace WorkerVideoCameraService.Services
             ffmpeg = _configuration["FFmpeg:Url"];
             typeCamera = int.Parse(_configuration["TypeCamera:Type"] ?? "2");
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoCamera"] ?? "10043");
-            
+            TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "30000";
         }
 
         public async Task RunApp(CancellationToken stoppingToken)
         {   
-            
-            long? idThuMuc = ThuMucLay;
-            var cameras = _iOTContext.Cameras.Where(x => x.Type == typeCamera).ToList();
-            if (idThuMuc > 0 && cameras.Count > 0)
+            if (ThuMucLay > 0)
             {
-                var kq = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMuc).Result;
+                var kq = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucLay).Result;
                 if (kq != null)
                 {
                   
                     while (!stoppingToken.IsCancellationRequested)
                     {
-                     
+                        var cameras = _iOTContext.Cameras.Where(x => x.Type == typeCamera && x.IsActive == true).ToList();
+
                         foreach (var cam in cameras)
                         {
                             long? ThuMucWSID = 0;
                             string ThuMucDuongDan = string.Empty;
-                            var thuMuc = _xmhtService.TaoThuMuc(null, idThuMuc, cam.Id.ToString(), ref ThuMucWSID, ref ThuMucDuongDan);
+                            var thuMuc = _xmhtService.TaoThuMuc(null, ThuMucLay, cam.Id.ToString(), ref ThuMucWSID, ref ThuMucDuongDan);
 
                             var fileName = cam.Id + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
                             var camId = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc).Result;
@@ -73,15 +73,12 @@ namespace WorkerVideoCameraService.Services
                                 DuongDanFile = Path.Combine(camId.DuongDan, fileName);
 
                                 //Lưu video
-                                _workVideo.GetVideo(ffmpeg, cam.RtspUrl, DuongDanFile);
+                                _workVideo.GetVideo(ffmpeg, cam.RtspUrl, DuongDanFile, TimeOut);
                             }
 
                        
                         }
                         await Task.Delay(5000, stoppingToken);
-
-                        //TimeSpan totalTimeRun = DateTime.Now.Subtract(timeRun);
-                        //_workVideo.Refresh(totalTimeRun, ffmpeg);
                     }
                  
                 }

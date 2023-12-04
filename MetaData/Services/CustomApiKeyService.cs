@@ -1,16 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
-using Microsoft.IdentityModel.Tokens;
 
-namespace FFmpegWebAPI.Data
+namespace MetaData.Services
 {
-    public class CustomApiKeyMiddleware
+    public class CustomApiKeyService
     {
         private readonly IConfiguration Configuration;
         private readonly RequestDelegate _next;
         const string API_KEY = "Api_Key";
-        public CustomApiKeyMiddleware(RequestDelegate next,
+        public CustomApiKeyService(RequestDelegate next,
         IConfiguration configuration)
         {
             _next = next;

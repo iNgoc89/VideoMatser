@@ -1,7 +1,7 @@
-﻿using FFmpegWebAPI.Models;
-using FFmpegWebAPI.Services;
+﻿
+using MetaData.Context;
+using MetaData.Services;
 using Microsoft.EntityFrameworkCore;
-using WorkerVideoCameraService;
 using WorkerVideoCameraService.Services;
 
 IHost host = Host.CreateDefaultBuilder(args)
@@ -15,10 +15,6 @@ IHost host = Host.CreateDefaultBuilder(args)
         //service delete video
         services.AddHostedService<DeleteVideoCameraService>();
         services.AddScoped<IDeleteVideoCameraService, DeleteProcessingService>();
-
-        //service concat video
-        services.AddHostedService<ConcatVideoCameraService>();
-        services.AddScoped<IConcatVideoCameraService, ConcatProcessingService>();
 
         services.AddScoped<XmhtService>();
         services.AddScoped<WorkVideoService>();

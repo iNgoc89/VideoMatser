@@ -1,13 +1,6 @@
-﻿using Azure.Core;
-using FFmpegWebAPI.Data;
-using FFmpegWebAPI.Models;
-using FFmpegWebAPI.Services;
+﻿using MetaData.Context;
+using MetaData.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.OpenApi.Expressions;
-using System;
-using System.Diagnostics;
-using System.Xml.Xsl;
 
 internal class Program
 {
@@ -22,7 +15,7 @@ internal class Program
               {
                   options.JsonSerializerOptions.PropertyNamingPolicy = null;
               });
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+       
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddDbContext<IOTContext>(options =>
@@ -41,7 +34,7 @@ internal class Program
             app.UseSwaggerUI();
         }
        
-        app.UseMiddleware<CustomApiKeyMiddleware>();
+        app.UseMiddleware<CustomApiKeyService>();
         app.UseStaticFiles();
         app.UseHttpsRedirection();
 

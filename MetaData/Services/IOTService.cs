@@ -1,8 +1,10 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using System.Data;
 
-namespace FFmpegWebAPI.Services
+
+namespace MetaData.Services
 {
     public class IOTService
     {
@@ -59,9 +61,9 @@ namespace FFmpegWebAPI.Services
                     var pars = new DynamicParameters();
                     pars.AddDynamicParams(new
                     {
-                      Id = id,
-                      VideoUri = videoUri,
-                      Status = status
+                        Id = id,
+                        VideoUri = videoUri,
+                        Status = status
                     });
 
                     var ret = connection.Query(sql: sql, param: pars,
@@ -77,7 +79,7 @@ namespace FFmpegWebAPI.Services
                     if (connection.State == ConnectionState.Open) connection.Close();
                 }
             }
-          
+
         }
         public void P_ConcatVideoCamera_UpdateStatus(int id, int status)
         {

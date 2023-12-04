@@ -1,10 +1,15 @@
 ﻿using Dapper;
-using FFmpegWebAPI.Data;
+using MetaData.Models;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace FFmpegWebAPI.Services
+namespace MetaData.Services
 {
     public class XmhtService
     {
@@ -56,7 +61,7 @@ namespace FFmpegWebAPI.Services
             return ret;
         }
 
-   
+
         public async Task<ThuMuc?> P_ThuMuc_LayTheoID(Guid? guid, long? id)
         {
             using (var connection = Connection)

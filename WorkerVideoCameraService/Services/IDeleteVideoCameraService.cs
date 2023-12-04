@@ -1,5 +1,4 @@
-﻿using FFmpegWebAPI.Data;
-using FFmpegWebAPI.Services;
+﻿using MetaData.Services;
 using Microsoft.AspNetCore.Hosting;
 using System;
 using System.Collections.Generic;
@@ -36,15 +35,13 @@ namespace WorkerVideoCameraService.Services
         }
         public async Task RunDeleteFile(CancellationToken stoppingToken)
         {
-            long? idThuMuc = ThuMucLay;
-            if (idThuMuc > 0)
+            if (ThuMucLay > 0)
             {
-                var kq = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMuc).Result;
+                var kq = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucLay).Result;
                 if (kq != null)
                 {
                     string? ThuMucDuongDan = kq.DuongDan;
 
-                 
                     while (!stoppingToken.IsCancellationRequested)
                     {
                         string[] files = Directory.GetFiles(ThuMucDuongDan, "*", SearchOption.AllDirectories);
@@ -52,27 +49,11 @@ namespace WorkerVideoCameraService.Services
                         {
                             if (file.Length > 0)
                             {
-                                var cutright = file[..^4];
-                                var cutleft = cutright[cutright.LastIndexOf('_')..];
+                                DateTime creation = File.GetCreationTime(file);
 
-                                var catleft2 = cutleft[1..];
-
-                                DateTime? dateTime;
-                                if (catleft2.Length > 0)
+                                if (creation < DateTime.Now.AddMinutes(-TimeDelete))
                                 {
-                                    _ = long.TryParse(catleft2, out long datetimeFile);
-                                    if (datetimeFile > 0)
-                                    {
-                                        dateTime = new DateTime(datetimeFile);
-
-                                        if (dateTime < DateTime.Now.AddMinutes(-TimeDelete))
-                                        {
-                                            _workVideo.DeleteFile(file);
-                                        }
-
-                                    }
-
-                                   
+                                    _workVideo.DeleteFile(file);
                                 }
                             }
                         }

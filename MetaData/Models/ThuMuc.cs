@@ -1,4 +1,4 @@
-﻿namespace FFmpegWebAPI.Data
+﻿namespace MetaData.Models
 {
     public class ThuMuc
     {
