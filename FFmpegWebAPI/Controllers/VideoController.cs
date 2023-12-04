@@ -204,15 +204,29 @@ namespace FFmpegWebAPI.Controllers
         public async Task<JsonResult> PostImage([FromBody] ImageRequest imageRequest)
         {
             ImageReturl imageReturl = new();
+            var urlImage = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucImage).Result;
+            var fileName = imageRequest.GID + ".jpg";
+
+            //kiểm tra GID
+            if (urlImage != null)
+            {
+                DuongDanFileImage = Path.Combine(urlImage.DuongDan, fileName);
+                if (System.IO.File.Exists(DuongDanFileImage))
+                {
+                    imageReturl.ErrMsg = "Image đã convert bas64Image trước đó!";
+                    return new JsonResult(imageReturl);
+                }
+            }
+
             //Kiểm tra cameraId
             var cameras = _iOTContext.Cameras.Where(x => x.Id == imageRequest.CameraId && x.IsActive == true).ToList();
             if (cameras.Count > 0 && ThuMucImage > 0)
             {
                 var camera = cameras.First();
-                var urlImage = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucImage).Result;
+             
                 if (urlImage != null && !string.IsNullOrEmpty(TimeOut))
                 {
-                    var fileName = imageRequest.CameraId + "_" + DateTime.Now.Ticks.ToString() + ".jpg";
+                   
                     DuongDanFileImage = Path.Combine(urlImage.DuongDan, fileName);
 
                     await _workVideoService.GetImage(ffmpeg, camera.RtspUrl, DuongDanFileImage, TimeOut);
