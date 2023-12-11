@@ -11,7 +11,7 @@ namespace WorkerVideoCameraService.Services
 {
     internal interface IDeleteVideoCameraService
     {
-        Task RunDeleteFile(CancellationToken stoppingToken);
+        Task RunDeleteVideo(CancellationToken stoppingToken);
     }
 
     internal class DeleteProcessingService : IDeleteVideoCameraService
@@ -33,7 +33,7 @@ namespace WorkerVideoCameraService.Services
             TimeDelete = double.Parse(_configuration["TimeDelete:Time"] ?? "0");
             _workVideo = workVideo;
         }
-        public async Task RunDeleteFile(CancellationToken stoppingToken)
+        public async Task RunDeleteVideo(CancellationToken stoppingToken)
         {
             if (ThuMucLay > 0 && TimeDelete > 0)
             {

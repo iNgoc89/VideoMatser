@@ -18,10 +18,10 @@ namespace WorkerVideoCameraService.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await RunDeleteFile(stoppingToken);
+            await RunDeleteTxt(stoppingToken);
         }
 
-        private async Task RunDeleteFile(CancellationToken stoppingToken)
+        private async Task RunDeleteTxt(CancellationToken stoppingToken)
         {
             using (var scope = _services.CreateScope())
             {
@@ -31,7 +31,7 @@ namespace WorkerVideoCameraService.Services
                     scope.ServiceProvider
                     .GetRequiredService<IDeleteTxtService>();
 
-                    await scopedProcessingService.RunDeleteFile(stoppingToken);
+                    await scopedProcessingService.RunDeleteTxt(stoppingToken);
                 }
                 catch
                 {

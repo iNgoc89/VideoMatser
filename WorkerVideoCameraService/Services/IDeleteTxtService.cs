@@ -9,7 +9,7 @@ namespace WorkerVideoCameraService.Services
 {
     internal interface IDeleteTxtService
     {
-        Task RunDeleteFile(CancellationToken stoppingToken);
+        Task RunDeleteTxt(CancellationToken stoppingToken);
     }
 
     internal class DeleteTxtProcessingService : IDeleteTxtService
@@ -31,7 +31,7 @@ namespace WorkerVideoCameraService.Services
             TimeDelete = double.Parse(_configuration["TimeDelete:Time"] ?? "0");
             _workVideo = workVideo;
         }
-        public async Task RunDeleteFile(CancellationToken stoppingToken)
+        public async Task RunDeleteTxt(CancellationToken stoppingToken)
         {
             if (ThuMucLay > 0 && TimeDelete > 0)
             {
