@@ -14,17 +14,17 @@ namespace MetaData.Services
     {
         public IOTContext _iOTContext;
         public string txtCmdConcat = string.Empty;
-
+        public string CMD = "CMD.exe";
         public WorkVideoService(IOTContext iOTContext)
         {
             _iOTContext = iOTContext;
         }
-        public void GetVideo(string? fileName, string rtspUrl, string contentRoot, string timeOut)
+        public void GetVideo(string rtspUrl, string contentRoot, string timeOut)
         {
-            string cmdLine = $@"-t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
+            string cmdLine = $@"/C ffmpeg -t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
 
             Process process = new();
-            process.StartInfo.FileName = fileName;
+            process.StartInfo.FileName = CMD;
             process.StartInfo.Arguments = cmdLine;
 
             process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
@@ -43,21 +43,21 @@ namespace MetaData.Services
             {
                 string cmdLine = $@"/C ({txtFileConcat}) > {tenFileConcatTxt}";
 
-                await RunProcessAsync("CMD.exe", cmdLine);
+                await RunProcessAsync(CMD, cmdLine);
 
             }
 
             return tenFileConcatTxt;
         }
 
-        public async Task ConcatVideo(int camId, string ThuMucDuongDan, string TenFileConcatTxt, DateTime beginDate, DateTime endDate, string? fileName, string contentRoot, string timeOut)
+        public async Task ConcatVideo(int camId, string ThuMucDuongDan, string TenFileConcatTxt, DateTime beginDate, DateTime endDate, string contentRoot, string timeOut)
         {
             var txtFileConcat = await CreateConcatTxt(camId, ThuMucDuongDan, beginDate, endDate, TenFileConcatTxt);
             if (!string.IsNullOrEmpty(txtFileConcat))
             {
-                string cmdLine = $@"-f concat -safe 0 -i {txtFileConcat} -c copy {contentRoot} -timeout {timeOut}";
+                string cmdLine = $@"/C ffmpeg -f concat -safe 0 -i {txtFileConcat} -c copy {contentRoot} -timeout {timeOut}";
 
-                await RunProcessAsync(fileName, cmdLine);
+                await RunProcessAsync(CMD, cmdLine);
             }
 
         }
@@ -129,11 +129,11 @@ namespace MetaData.Services
             return filesReturl;
         }
 
-        public async Task GetImage(string? fileName, string rtspUrl, string contentRoot, string timeOut)
+        public async Task GetImage(string rtspUrl, string contentRoot, string timeOut)
         {
-            string cmdLine = $@"-rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M -ss 00:00:01.000 -vframes 1 {contentRoot} -y -loglevel quiet -an -hide_banner";
+            string cmdLine = $@"/C ffmpeg -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M -ss 00:00:01.000 -vframes 1 {contentRoot} -y -loglevel quiet -an -hide_banner";
 
-            await RunProcessAsync(fileName, cmdLine);
+            await RunProcessAsync(CMD, cmdLine);
 
         }
         protected virtual bool IsFileLocked(FileInfo file)

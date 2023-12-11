@@ -18,6 +18,10 @@ namespace MetaData.Context
 
         public virtual DbSet<ConcatVideoCamera> ConcatVideoCameras { get; set; }
 
+        public virtual DbSet<Business> Businesses { get; set; }
+
+        public virtual DbSet<CameraBusiness> CameraBusinesses { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder

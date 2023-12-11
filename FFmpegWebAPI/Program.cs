@@ -23,8 +23,8 @@ internal class Program
         builder.Services.AddScoped<IOTService>();
         builder.Services.AddScoped<WorkVideoService>();
         builder.Services.AddScoped<XmhtService>();
-       
-           
+        builder.Services.AddScoped<WorkImageService>();
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.

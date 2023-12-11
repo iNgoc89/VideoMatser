@@ -16,6 +16,9 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddHostedService<DeleteVideoCameraService>();
         services.AddScoped<IDeleteVideoCameraService, DeleteProcessingService>();
 
+        services.AddHostedService<DeleteTxtService>();
+        services.AddScoped<IDeleteTxtService, DeleteTxtProcessingService>();
+
         services.AddScoped<XmhtService>();
         services.AddScoped<WorkVideoService>();
         services.AddScoped<IOTService>();

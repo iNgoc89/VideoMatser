@@ -33,6 +33,7 @@ namespace MetaData.Context
 
         public bool? IsActive { get; set; }
 
+        public ICollection<CameraBusiness> CameraBusinesses { get; set;}
     }
 }
 

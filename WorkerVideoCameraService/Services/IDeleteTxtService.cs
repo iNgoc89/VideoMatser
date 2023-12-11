@@ -1,20 +1,18 @@
 ﻿using MetaData.Services;
-using Microsoft.AspNetCore.Hosting;
 using System;
 using System.Collections.Generic;
-using System.Formats.Tar;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace WorkerVideoCameraService.Services
 {
-    internal interface IDeleteVideoCameraService
+    internal interface IDeleteTxtService
     {
         Task RunDeleteFile(CancellationToken stoppingToken);
     }
 
-    internal class DeleteProcessingService : IDeleteVideoCameraService
+    internal class DeleteTxtProcessingService : IDeleteTxtService
     {
         public IConfiguration _configuration;
         public IHostEnvironment _environment;
@@ -24,12 +22,12 @@ namespace WorkerVideoCameraService.Services
         public long? ThuMucLay = null;
         public static string? DuongDanFile = string.Empty;
         public double TimeDelete = 0;
-        public DeleteProcessingService(IHostEnvironment environment, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
+        public DeleteTxtProcessingService(IHostEnvironment environment, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
         {
             _configuration = configuration;
             _environment = environment;
             _xmhtService = xmhtService;
-            ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoDelete"] ?? "0");
+            ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:CmdDelete"] ?? "0");
             TimeDelete = double.Parse(_configuration["TimeDelete:Time"] ?? "0");
             _workVideo = workVideo;
         }

@@ -8,6 +8,7 @@ using MetaData.Context;
 using MetaData.Models;
 using MetaData.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FFmpegWebAPI.Controllers
 {
@@ -19,34 +20,41 @@ namespace FFmpegWebAPI.Controllers
         public IOTService _iOTService;
         public WorkVideoService _workVideoService;
         public XmhtService _xmhtService;
+        public WorkImageService _workImageService;
         public IConfiguration _configuration;
-        public long? ThuMucLay = null;
-        public long? ThuMucLuu = null;
+        public long? ThuMucVideoDelete = null;
+        public long? ThuMucVideoSave = null;
         public long? ThuMucId = null;
-        public long? ThuMucTxt = null;
-        public long? ThuMucImage = null;
+        public long? ThuMucCmdDelete = null;
+        public long? ThuMucImageSave = null;
+        public long? ThuMucImageDelete = null;
         public string? ThuMucVirtual = string.Empty;
-        public string? DuongDanFileLuu = string.Empty;
-        public string? DuongDanFileTXT = string.Empty;
-        public string? DuongDanFileImage = string.Empty;
-        public string? TimeOut = string.Empty;
-        public string? ffmpeg = string.Empty;
-        public VideoController(IOTContext iOTContext, IOTService iOTService, WorkVideoService workVideoService, XmhtService xmhtService, IConfiguration configuration)
+        public string TimeOut = string.Empty;
+        public int TypeVideo = 0;
+        public int TypeImage = 0;
+        public VideoController(IOTContext iOTContext, IOTService iOTService, WorkVideoService workVideoService, XmhtService xmhtService, WorkImageService workImageService, IConfiguration configuration)
         {
             _iOTContext = iOTContext;
             _iOTService = iOTService;
             _workVideoService = workVideoService;
             _xmhtService = xmhtService;
+            _workImageService = workImageService;
             _configuration = configuration;
 
-            ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoCamera"] ?? "10043");
-            ThuMucLuu = long.Parse(_configuration["ThuMucNghiepVu:ConcatVideoCamera"] ?? "10046");
-            ThuMucTxt = long.Parse(_configuration["ThuMucNghiepVu:CmdConcat"] ?? "10047");
-            ThuMucImage = long.Parse(_configuration["ThuMucNghiepVu:ImageCamera"] ?? "10065");
-            ThuMucVirtual = _configuration["ThuMucNghiepVu:ThuMucVirtual"];
-            TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "30000";
 
-            ffmpeg = _configuration["FFmpeg:Url"];
+            ThuMucVideoDelete = long.Parse(_configuration["ThuMucNghiepVu:VideoDelete"] ?? "0");
+            ThuMucVideoSave = long.Parse(_configuration["ThuMucNghiepVu:VideoSave"] ?? "0");
+            ThuMucCmdDelete = long.Parse(_configuration["ThuMucNghiepVu:CmdDelete"] ?? "0");
+            TypeVideo = int.Parse(_configuration["TypeCamera:TypeVideo"] ?? "0");
+
+            ThuMucImageSave = long.Parse(_configuration["ThuMucNghiepVu:ImageSave"] ?? "0");
+            ThuMucImageDelete = long.Parse(_configuration["ThuMucNghiepVu:ImageDelete"] ?? "0");
+            TypeImage = int.Parse(_configuration["TypeCamera:TypeImage"] ?? "0");
+
+            ThuMucVirtual = _configuration["ThuMucNghiepVu:ThuMucVirtual"] ?? "";
+            TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
+
+
         }
 
         // GET api/<VideoController>/GID
@@ -76,186 +84,203 @@ namespace FFmpegWebAPI.Controllers
         {
             VideoReturl videoReturl = new();
             int kq = 0;
-            //Kiểm tra kiểu ngày tháng
-            if (videoConcatRequest.BeginDate > DateTime.MinValue && videoConcatRequest.EndDate > DateTime.MinValue)
+
+            if (ThuMucVideoDelete == 0 || ThuMucVideoSave == 0 || ThuMucCmdDelete == 0)
             {
-                //Kiểm tra GID đã tồn tại hay chưa
-                List<ConcatVideoCamera> gid = _iOTContext.ConcatVideoCameras.Where(x => x.GID == videoConcatRequest.GID).ToList();
-                if (gid.Count > 0)
+                videoReturl.ErrMsg = "Id thư mục Video sai, xem lại appsetting!";
+                return new JsonResult(videoReturl);
+            }
+
+            if (TypeVideo == 0)
+            {
+                videoReturl.ErrMsg = "Type Video sai, xem lại appsetting!";
+                return new JsonResult(videoReturl);
+            }
+
+            if (TimeOut == "0")
+            {
+                videoReturl.ErrMsg = "Timeout sai, xem lại appsetting!";
+                return new JsonResult(videoReturl);
+            }
+
+
+            if (string.IsNullOrEmpty(ThuMucVirtual))
+            {
+                videoReturl.ErrMsg = "Thư mục ảo hóa sai, xem lại appsetting!";
+                return new JsonResult(videoReturl);
+            }
+
+            //Kiểm tra kiểu ngày tháng
+            if (videoConcatRequest.BeginDate == DateTime.MinValue && videoConcatRequest.EndDate == DateTime.MinValue)
+            {
+                videoReturl.ErrMsg = "Kiểu dữ liệu ngày tháng không hợp lệ!";
+                return new JsonResult(videoReturl);
+            }
+
+            //Kiểm tra GID đã tồn tại hay chưa
+            List<ConcatVideoCamera> gid = _iOTContext.ConcatVideoCameras.Where(x => x.GID == videoConcatRequest.GID).ToList();
+            if (gid.Count > 0)
+            {
+                var kqGID = gid.First();
+
+                videoReturl.Id = kqGID.Id;
+                videoReturl.UrlPath = kqGID.VideoUri;
+                videoReturl.ErrMsg = "Đã tồn tại GID!";
+
+                return new JsonResult(videoReturl);
+            }
+
+            //Kiểm tra video tương tự trên hệ thống hay chưa
+            List<ConcatVideoCamera> data = _iOTContext.ConcatVideoCameras.Where(x => x.BeginDate <= videoConcatRequest.BeginDate.AddSeconds(5) && x.BeginDate >= videoConcatRequest.BeginDate.AddSeconds(-5) && x.EndDate <= videoConcatRequest.EndDate.AddSeconds(5) && x.EndDate >= videoConcatRequest.EndDate.AddSeconds(-5) && x.CameraId == videoConcatRequest.CameraId).ToList();
+            if (data.Count > 0)
+            {
+                var video = data.First();
+                videoReturl.Id = video.Id;
+                videoReturl.UrlPath = video.VideoUri;
+                videoReturl.ErrMsg = "Đã tồn tại video trên hệ thống!";
+
+                return new JsonResult(videoReturl);
+            }
+
+            //Kiểm tra cameraId có tồn tại hay ko
+            var cameras = _iOTContext.CameraBusinesses.Include(x => x.Camera)
+                   .Where(x => x.CameraId == videoConcatRequest.CameraId && x.BusinessId == TypeVideo && x.IsActive == true).ToList();
+            if (cameras.Count == 0)
+            {
+                videoReturl.ErrMsg = "Camera không tồn tại trên hệ thống!";
+                return new JsonResult(videoReturl);
+            }
+
+            //Kiểm tra có file phù hợp để ghép hay không
+            try
+            {
+                long? ThuMucWSID = 0;
+                string ThuMucDuongDan = string.Empty;
+                var thuMuc = _xmhtService.TaoThuMuc(null, ThuMucVideoSave, DateTime.Now.ToString("yyyyMM"), ref ThuMucWSID, ref ThuMucDuongDan);
+                var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc).Result;
+                var urlTxt = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucCmdDelete).Result;
+
+                long thuMucConId = 0;
+                var idThuMucLuuLay = _xmhtService.P_ThuMuc_LayTheoThuMucCha(null, ThuMucVideoDelete, videoConcatRequest.CameraId.ToString(), ref thuMucConId);
+                var urlLuuLay = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLuuLay).Result;
+                if (urlLuu != null && urlTxt != null && idThuMucLuuLay > 0 && urlLuuLay != null)
                 {
-                    var kqGID = gid.First();
-
-                    videoReturl.Id = kqGID.Id;
-                    videoReturl.UrlPath = kqGID.VideoUri;
-                    videoReturl.ErrMsg = "Đã tồn tại GID!";
-
-                    return new JsonResult(videoReturl);
-                }
-
-                //Kiểm tra video tương tự trên hệ thống hay chưa
-                List<ConcatVideoCamera> data = _iOTContext.ConcatVideoCameras.Where(x => x.BeginDate <= videoConcatRequest.BeginDate.AddSeconds(5) && x.BeginDate >= videoConcatRequest.BeginDate.AddSeconds(-5) && x.EndDate <= videoConcatRequest.EndDate.AddSeconds(5) && x.EndDate >= videoConcatRequest.EndDate.AddSeconds(-5)).ToList();
-                if (data.Count > 0)
-                {
-                    var video = data.First();
-                    videoReturl.Id = video.Id;
-                    videoReturl.UrlPath = video.VideoUri;
-                    videoReturl.ErrMsg = "Đã tồn tại video trên hệ thống!";
-
-                    return new JsonResult(videoReturl);
-                }
-
-                //Kiểm tra cameraId có tồn tại hay ko
-                var checkCam = _iOTContext.Cameras.Where(x => x.Id == videoConcatRequest.CameraId && x.IsActive == true).ToList();
-                if (checkCam.Count == 0)
-                {
-                    videoReturl.ErrMsg = "Camera không tồn tại trên hệ thống!";
-                    return new JsonResult(videoReturl);
-                }
-
-                //Kiểm tra có file phù hợp để ghép hay không
-                try
-                {
-                    if (ThuMucLay > 0 && ThuMucLuu > 0 && ThuMucTxt > 0 && !string.IsNullOrEmpty(TimeOut))
+                    var checkFile = _workVideoService.CheckFile(videoConcatRequest.CameraId, urlLuuLay.DuongDan, videoConcatRequest.BeginDate, videoConcatRequest.EndDate);
+                    if (checkFile?.Length > 0)
                     {
-                        long? ThuMucWSID = 0;
-                        string ThuMucDuongDan = string.Empty;
-                        var thuMuc = _xmhtService.TaoThuMuc(null, ThuMucLuu, DateTime.Now.ToString("yyyyMM"), ref ThuMucWSID, ref ThuMucDuongDan);
-                        var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc).Result;
-                        var urlLay = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucLay).Result;
-                        var urlTxt = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucTxt).Result;
-
-                        long thuMucConId = 0;
-                        var idThuMucLuuLay = _xmhtService.P_ThuMuc_LayTheoThuMucCha(null, ThuMucLay, videoConcatRequest.CameraId.ToString(), ref thuMucConId);
-                        var urlLuuLay = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLuuLay).Result;
-                        if (urlLay != null && urlLuu != null && urlTxt != null && idThuMucLuuLay > 0 && urlLuuLay != null)
+                        kq = _iOTService.P_ConcatVideoCamera_Insert(videoConcatRequest.GID, videoConcatRequest.CameraId, videoConcatRequest.BeginDate, videoConcatRequest.EndDate);
+                        if (kq > 0)
                         {
-                            var checkFile = _workVideoService.CheckFile(videoConcatRequest.CameraId, urlLuuLay.DuongDan, videoConcatRequest.BeginDate, videoConcatRequest.EndDate);
-                            if (checkFile?.Length > 0)
+                            try
                             {
-                                kq = _iOTService.P_ConcatVideoCamera_Insert(videoConcatRequest.GID, videoConcatRequest.CameraId, videoConcatRequest.BeginDate, videoConcatRequest.EndDate);
-                                if (kq > 0)
+                                var dateNow = DateTime.Now.ToString("yyyyMM");
+                                var fileName = videoConcatRequest.GID + ".mp4";
+                                var fileNameTxt = videoConcatRequest.GID + ".txt";
+
+                                var DuongDanFileLuu = Path.Combine(urlLuu.DuongDan, fileName);
+                                var DuongDanFileTXT = Path.Combine(urlTxt.DuongDan, fileNameTxt);
+
+                                //Concat Video
+                                await _workVideoService.ConcatVideo(videoConcatRequest.CameraId, urlLuuLay.DuongDan, DuongDanFileTXT, videoConcatRequest.BeginDate, videoConcatRequest.EndDate, DuongDanFileLuu, TimeOut);
+
+                                //Check file tồn tại
+                                if (System.IO.File.Exists(DuongDanFileLuu))
                                 {
-                                    try
-                                    {
-                                        var dateNow = DateTime.Now.ToString("yyyyMM");
-                                        var fileName = videoConcatRequest.GID + ".mp4";
-                                        var fileNameTxt = videoConcatRequest.GID + ".txt";
+                                    //Update table ConcatVideoCamera
+                                    var videoUri = $"/{ThuMucVirtual}/" + dateNow + "/" + fileName;
+                                    _iOTService.P_ConcatVideoCamera_Update(kq, videoUri, 20);
 
-                                        DuongDanFileLuu = Path.Combine(urlLuu.DuongDan, fileName);
-                                        DuongDanFileTXT = Path.Combine(urlTxt.DuongDan, fileNameTxt);
+                                    videoReturl.Id = kq;
+                                    videoReturl.GID = videoConcatRequest.GID;
+                                    videoReturl.UrlPath = videoUri;
+                                    videoReturl.ErrMsg = "Tạo lệnh ghép thành công!";
 
-                                        //Concat Video
-                                        await _workVideoService.ConcatVideo(videoConcatRequest.CameraId, urlLuuLay.DuongDan, DuongDanFileTXT, videoConcatRequest.BeginDate, videoConcatRequest.EndDate, ffmpeg, DuongDanFileLuu, TimeOut);
+                                    return new JsonResult(videoReturl);
 
-                                        //Check file tồn tại
-                                        if (System.IO.File.Exists(DuongDanFileLuu))
-                                        {
-                                            //Update table ConcatVideoCamera
-                                            if (!string.IsNullOrEmpty(ThuMucVirtual))
-                                            {
-                                                var videoUri = $"/{ThuMucVirtual}/" + dateNow + "/" + fileName;
-                                                _iOTService.P_ConcatVideoCamera_Update(kq, videoUri, 20);
-
-                                                videoReturl.Id = kq;
-                                                videoReturl.GID = videoConcatRequest.GID;
-                                                videoReturl.UrlPath = videoUri;
-                                                videoReturl.ErrMsg = "Tạo lệnh ghép thành công!";
-
-                                                return new JsonResult(videoReturl);
-                                            }
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        videoReturl.ErrMsg = ex.Message;
-                                        return new JsonResult(videoReturl);
-                                    }
                                 }
 
-                                videoReturl.ErrMsg = "Insert được db nhưng lỗi concat";
+                                videoReturl.ErrMsg = "File video không tồn tại!";
                                 return new JsonResult(videoReturl);
 
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                videoReturl.ErrMsg = "Không có video phù hợp. Xem lại thời điểm lấy video!";
+                                videoReturl.ErrMsg = ex.Message;
                                 return new JsonResult(videoReturl);
                             }
                         }
 
-                        videoReturl.ErrMsg = "Không lấy được thư mục";
+                        videoReturl.ErrMsg = "Insert được db nhưng lỗi concat";
                         return new JsonResult(videoReturl);
 
                     }
+                    else
+                    {
+                        videoReturl.ErrMsg = "Không có video phù hợp. Xem lại thời điểm lấy video!";
+                        return new JsonResult(videoReturl);
+                    }
                 }
-                catch (Exception ex)
-                {
 
-                    videoReturl.ErrMsg = ex.Message;
-                    return new JsonResult(videoReturl);
-                }
+                videoReturl.ErrMsg = "Không lấy được thư mục";
+                return new JsonResult(videoReturl);
+
 
             }
-            videoReturl.ErrMsg = "Kiểu dữ liệu ngày tháng không hợp lệ!";
-            return new JsonResult(videoReturl);
+            catch (Exception ex)
+            {
+
+                videoReturl.ErrMsg = ex.Message;
+                return new JsonResult(videoReturl);
+            }
         }
 
         [HttpPost("Image")]
-        public async Task<JsonResult> PostImage([FromBody] ImageRequest imageRequest)
+        public async Task<JsonResult> PostImage([FromBody] ImageGetRequest imageRequest)
         {
-            ImageReturl imageReturl = new();
-            var urlImage = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucImage).Result;
-            var fileName = imageRequest.GID + ".jpg";
-
-            //kiểm tra GID
-            if (urlImage != null)
+            ImageReturn imageReturl = new();
+            if (ThuMucImageDelete == 0 || ThuMucImageSave == 0)
             {
-                DuongDanFileImage = Path.Combine(urlImage.DuongDan, fileName);
-                if (System.IO.File.Exists(DuongDanFileImage))
-                {
-                    imageReturl.ErrMsg = "Image đã convert bas64Image trước đó!";
-                    return new JsonResult(imageReturl);
-                }
-            }
-
-            //Kiểm tra cameraId
-            var cameras = _iOTContext.Cameras.Where(x => x.Id == imageRequest.CameraId && x.IsActive == true).ToList();
-            if (cameras.Count > 0 && ThuMucImage > 0)
-            {
-                var camera = cameras.First();
-             
-                if (urlImage != null && !string.IsNullOrEmpty(TimeOut))
-                {
-                   
-                    DuongDanFileImage = Path.Combine(urlImage.DuongDan, fileName);
-
-                    await _workVideoService.GetImage(ffmpeg, camera.RtspUrl, DuongDanFileImage, TimeOut);
-
-                    //Kiểm tra file đã ghi hay chưa
-                    if (System.IO.File.Exists(DuongDanFileImage))
-                    {
-                        var base64Image = _workVideoService.ImageToBase64(DuongDanFileImage);
-                        if (!string.IsNullOrEmpty(base64Image))
-                        {
-                            imageReturl.Base64 = base64Image;
-                            imageReturl.ErrMsg = "Tạo base64 cho image thành công!";
-                            return new JsonResult(imageReturl);
-                        }
-
-                        imageReturl.ErrMsg = "Lỗi tạo bas64Image!";
-                        return new JsonResult(imageReturl);
-                    }
-
-                    imageReturl.ErrMsg = "Lỗi file không tồn tại!";
-                    return new JsonResult(imageReturl);
-                }
-
-                imageReturl.ErrMsg = "Đường dẫn lưu image không tồn tại!";
+                imageReturl.ErrMsg = "Id thư mục Image sai, xem lại appsetting!";
                 return new JsonResult(imageReturl);
             }
 
-            imageReturl.ErrMsg = "Camera không hợp lệ!";
-            return new JsonResult(imageReturl);
+            if (TypeImage == 0)
+            {
+                imageReturl.ErrMsg = "Type Image sai, xem lại appsetting!";
+                return new JsonResult(imageReturl);
+            }
+
+            if (TimeOut == "0")
+            {
+                imageReturl.ErrMsg = "Timeout sai, xem lại appsetting!";
+                return new JsonResult(imageReturl);
+            }
+
+            if (string.IsNullOrEmpty(ThuMucVirtual))
+            {
+                imageReturl.ErrMsg = "Thư mục ảo hóa sai, xem lại appsetting!";
+                return new JsonResult(imageReturl);
+            }
+
+            try
+            {
+                if (imageRequest.SaveImage == true)
+                {
+                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ThuMucVirtual);
+                }
+                else
+                {
+                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageDelete, imageRequest.CameraId.ToString(), TypeImage, TimeOut, ThuMucVirtual);
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                imageReturl.ErrMsg = ex.Message;
+                return new JsonResult(imageReturl);
+            }
         }
+
     }
 }

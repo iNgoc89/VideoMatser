@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace MetaData.Models
 {
-    public class ImageRequest
+    public class ImageGetRequest
     {
         public Guid GID { get; set; }
         public int CameraId { get; set; }
+        public bool SaveImage { get; set; }
     }
 }

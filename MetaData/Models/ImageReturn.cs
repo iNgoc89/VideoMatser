@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace MetaData.Models
 {
-    public class ImageReturl
+    public class ImageReturn
     {
         public string? Base64 { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; } = string.Empty;
         public string? ErrMsg { get; set; } = string.Empty;
     }
 }
