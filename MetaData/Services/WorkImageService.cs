@@ -84,7 +84,7 @@ namespace MetaData.Services
                         return new JsonResult(imageReturl);
                     }
 
-                    imageReturl.ErrMsg = "Lỗi file không tồn tại!";
+                    imageReturl.ErrMsg = $"Lỗi file không tồn tại! {urlImageSave}" ;
                     return new JsonResult(imageReturl);
                 }
 
@@ -93,7 +93,7 @@ namespace MetaData.Services
             }
 
 
-            imageReturl.ErrMsg = "Đường dẫn lưu image không tồn tại!";
+            imageReturl.ErrMsg = $"Đường dẫn lưu image không tồn tại! {thuMuc} - {urlLuu}";
             return new JsonResult(imageReturl);
         }
     }
