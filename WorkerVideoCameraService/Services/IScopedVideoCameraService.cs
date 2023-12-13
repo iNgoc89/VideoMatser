@@ -43,6 +43,7 @@ namespace WorkerVideoCameraService.Services
             _workVideo = workVideo;
             _configuration = configuration;
 
+            ffmpeg = _configuration["FFmpeg:Url"];
             TypeVideo = int.Parse(_configuration["TypeCamera:TypeVideo"] ?? "0");
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoDelete"] ?? "0");
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
@@ -74,7 +75,7 @@ namespace WorkerVideoCameraService.Services
                                 DuongDanFile = Path.Combine(camId.DuongDan, fileName);
 
                                 //Lưu video
-                                _workVideo.GetVideo(cam.Camera.RtspUrl, DuongDanFile, TimeOut);
+                                _workVideo.GetVideo(ffmpeg,cam.Camera.RtspUrl, DuongDanFile, TimeOut);
                             }
 
                        

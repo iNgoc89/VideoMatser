@@ -2,36 +2,103 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
-using MetaData.Context;
 using Microsoft.EntityFrameworkCore;
 
-namespace MetaData.Context
+namespace MetaData.Context;
+
+public partial class IOTContext : DbContext
 {
-    public partial class IOTContext : DbContext
+    public IOTContext(DbContextOptions<IOTContext> options)
+        : base(options)
     {
-        public IOTContext(DbContextOptions<IOTContext> options)
-            : base(options)
-        {
-        }
-
-        public virtual DbSet<Camera> Cameras { get; set; }
-
-        public virtual DbSet<ConcatVideoCamera> ConcatVideoCameras { get; set; }
-
-        public virtual DbSet<Business> Businesses { get; set; }
-
-        public virtual DbSet<CameraBusiness> CameraBusinesses { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder
-                .HasDefaultSchema("cmrs")
-                .UseCollation("Latin1_General_100_CI_AS_SC");
-
-            OnModelCreatingPartial(modelBuilder);
-        }
-
-        partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
-}
 
+    public virtual DbSet<Business> Businesses { get; set; }
+
+    public virtual DbSet<Camera> Cameras { get; set; }
+
+    public virtual DbSet<CameraBusiness> CameraBusinesses { get; set; }
+
+    public virtual DbSet<ConcatVideoCamera> ConcatVideoCameras { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .HasDefaultSchema("Logs")
+            .UseCollation("Latin1_General_100_CI_AS_SC");
+
+        modelBuilder.Entity<Business>(entity =>
+        {
+            entity.ToTable("Business", "cmrs");
+
+            entity.Property(e => e.Code)
+                .IsRequired()
+                .HasMaxLength(100);
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("((2023))")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(150);
+        });
+
+        modelBuilder.Entity<Camera>(entity =>
+        {
+            entity.ToTable("Camera", "cmrs");
+
+            entity.HasIndex(e => e.Code, "CMRs_Camera_Code_IX").IsUnique();
+
+            entity.Property(e => e.Code)
+                .IsRequired()
+                .HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.IpAddress)
+                .IsRequired()
+                .HasMaxLength(50);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(100);
+            entity.Property(e => e.Password)
+                .IsRequired()
+                .HasMaxLength(50);
+            entity.Property(e => e.RtspUrl)
+                .IsRequired()
+                .HasMaxLength(500);
+            entity.Property(e => e.UserName)
+                .IsRequired()
+                .HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<CameraBusiness>(entity =>
+        {
+            entity.ToTable("CameraBusiness", "cmrs");
+
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Business).WithMany(p => p.CameraBusinesses)
+                .HasForeignKey(d => d.BusinessId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(d => d.Camera).WithMany(p => p.CameraBusinesses)
+                .HasForeignKey(d => d.CameraId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<ConcatVideoCamera>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ConcatVi__3214EC073ED3E400");
+
+            entity.ToTable("ConcatVideoCamera", "cmrs");
+
+            entity.Property(e => e.BeginDate).HasColumnType("datetime");
+            entity.Property(e => e.EndDate).HasColumnType("datetime");
+            entity.Property(e => e.Gid).HasColumnName("GID");
+            entity.Property(e => e.VideoUri).HasMaxLength(250);
+        });
+
+        OnModelCreatingPartial(modelBuilder);
+    }
+
+    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+}

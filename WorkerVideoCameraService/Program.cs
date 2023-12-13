@@ -16,16 +16,17 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddHostedService<DeleteVideoCameraService>();
         services.AddScoped<IDeleteVideoCameraService, DeleteProcessingService>();
 
-        //service delete txt
+        ////service delete txt
         services.AddHostedService<DeleteTxtService>();
         services.AddScoped<IDeleteTxtService, DeleteTxtProcessingService>();
 
-        //service delete image
+        ////service delete image
         services.AddHostedService<DeleteImageCameraService>();
         services.AddScoped<IDeleteImageCameraService, DeleteImageProcessingService>();
 
         services.AddScoped<XmhtService>();
         services.AddScoped<WorkVideoService>();
+        services.AddScoped<WorkDeleteService>();
         services.AddScoped<IOTService>();
 
         //add windown service

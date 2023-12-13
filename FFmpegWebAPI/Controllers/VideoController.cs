@@ -64,7 +64,7 @@ namespace FFmpegWebAPI.Controllers
         {
             if (GID != Guid.Empty)
             {
-                var data = _iOTContext.ConcatVideoCameras.Where(x => x.GID == GID).ToList();
+                var data = _iOTContext.ConcatVideoCameras.Where(x => x.Gid == GID).ToList();
                 if (data.Count > 0)
                 {
                     return new JsonResult(data);
@@ -118,7 +118,7 @@ namespace FFmpegWebAPI.Controllers
             }
 
             //Kiểm tra GID đã tồn tại hay chưa
-            List<ConcatVideoCamera> gid = _iOTContext.ConcatVideoCameras.Where(x => x.GID == videoConcatRequest.GID).ToList();
+            List<ConcatVideoCamera> gid = _iOTContext.ConcatVideoCameras.Where(x => x.Gid == videoConcatRequest.GID).ToList();
             if (gid.Count > 0)
             {
                 var kqGID = gid.First();

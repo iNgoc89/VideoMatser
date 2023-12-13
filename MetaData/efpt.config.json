@@ -1,0 +1,61 @@
+﻿{
+   "CodeGenerationMode": 4,
+   "ContextClassName": "IOTContext",
+   "ContextNamespace": null,
+   "DefaultDacpacSchema": null,
+   "FilterSchemas": true,
+   "IncludeConnectionString": false,
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Context",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "MetaData",
+   "Schemas": [
+      {
+         "Name": "cmrs"
+      }
+   ],
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "[cmrs].[Business]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[cmrs].[Camera]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[cmrs].[CameraBusiness]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[cmrs].[ConcatVideoCamera]",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": "noibo2.IOT.Logs",
+   "UncountableWords": null,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false
+}

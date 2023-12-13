@@ -10,11 +10,9 @@ namespace WorkerVideoCameraService.Services
     public class DeleteVideoCameraService : BackgroundService
     {
         public IServiceProvider _services { get; }
-        private readonly IHostApplicationLifetime _hostApplicationLifetime;
-        public DeleteVideoCameraService(IServiceProvider services, IHostApplicationLifetime hostApplicationLifetime)
+        public DeleteVideoCameraService(IServiceProvider services)
         {
             _services = services;
-            _hostApplicationLifetime = hostApplicationLifetime;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -40,7 +38,7 @@ namespace WorkerVideoCameraService.Services
                 }
                 finally
                 {
-                    _hostApplicationLifetime.StopApplication();
+                    await StopAsync(stoppingToken);
                 }
          
             }

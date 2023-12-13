@@ -19,12 +19,12 @@ namespace MetaData.Services
         {
             _iOTContext = iOTContext;
         }
-        public void GetVideo(string rtspUrl, string contentRoot, string timeOut)
+        public void GetVideo(string? fileName, string rtspUrl, string contentRoot, string timeOut)
         {
-            string cmdLine = $@"/C ffmpeg -t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
+            string cmdLine = $@"-t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
 
             Process process = new();
-            process.StartInfo.FileName = CMD;
+            process.StartInfo.FileName = fileName;
             process.StartInfo.Arguments = cmdLine;
 
             process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
