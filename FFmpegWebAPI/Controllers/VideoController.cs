@@ -28,7 +28,8 @@ namespace FFmpegWebAPI.Controllers
         public long? ThuMucCmdDelete = null;
         public long? ThuMucImageSave = null;
         public long? ThuMucImageDelete = null;
-        public string? ThuMucVirtual = string.Empty;
+        public string? VideoVirtual = string.Empty;
+        public string? ImageVirtual = string.Empty;
         public string TimeOut = string.Empty;
         public int TypeVideo = 0;
         public int TypeImage = 0;
@@ -51,7 +52,8 @@ namespace FFmpegWebAPI.Controllers
             ThuMucImageDelete = long.Parse(_configuration["ThuMucNghiepVu:ImageDelete"] ?? "0");
             TypeImage = int.Parse(_configuration["TypeCamera:TypeImage"] ?? "0");
 
-            ThuMucVirtual = _configuration["ThuMucNghiepVu:ThuMucVirtual"] ?? "";
+            VideoVirtual = _configuration["ThuMucNghiepVu:VideoVirtual"] ?? "";
+            ImageVirtual = _configuration["ThuMucNghiepVu:ImageVirtual"] ?? "";
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
 
 
@@ -104,7 +106,7 @@ namespace FFmpegWebAPI.Controllers
             }
 
 
-            if (string.IsNullOrEmpty(ThuMucVirtual))
+            if (string.IsNullOrEmpty(VideoVirtual))
             {
                 videoReturl.ErrMsg = "Thư mục ảo hóa sai, xem lại appsetting!";
                 return new JsonResult(videoReturl);
@@ -187,7 +189,7 @@ namespace FFmpegWebAPI.Controllers
                                 if (System.IO.File.Exists(DuongDanFileLuu))
                                 {
                                     //Update table ConcatVideoCamera
-                                    var videoUri = $"/{ThuMucVirtual}/" + dateNow + "/" + fileName;
+                                    var videoUri = $"/{VideoVirtual}/" + dateNow + "/" + fileName;
                                     _iOTService.P_ConcatVideoCamera_Update(kq, videoUri, 20);
 
                                     videoReturl.Id = kq;
@@ -256,7 +258,7 @@ namespace FFmpegWebAPI.Controllers
                 return new JsonResult(imageReturl);
             }
 
-            if (string.IsNullOrEmpty(ThuMucVirtual))
+            if (string.IsNullOrEmpty(ImageVirtual))
             {
                 imageReturl.ErrMsg = "Thư mục ảo hóa sai, xem lại appsetting!";
                 return new JsonResult(imageReturl);
@@ -266,11 +268,11 @@ namespace FFmpegWebAPI.Controllers
             {
                 if (imageRequest.SaveImage == true)
                 {
-                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ThuMucVirtual);
+                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ImageVirtual);
                 }
                 else
                 {
-                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageDelete, imageRequest.CameraId.ToString(), TypeImage, TimeOut, ThuMucVirtual);
+                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageDelete, imageRequest.CameraId.ToString(), TypeImage, TimeOut, ImageVirtual);
                 }
 
 
