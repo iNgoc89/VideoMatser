@@ -22,7 +22,7 @@ namespace MetaData.Services
         public void GetVideo(string? fileName, string rtspUrl, string contentRoot, string timeOut)
         {
             string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale_cuda=640:360 -qp 23 -c:v h264_nvenc -r 24 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
-
+                
             Process process = new();
             process.StartInfo.FileName = fileName;
             process.StartInfo.Arguments = cmdLine;
