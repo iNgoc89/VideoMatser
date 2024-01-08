@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Management.Automation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,18 +22,21 @@ namespace MetaData.Services
         }
         public void GetVideo(string? fileName, string rtspUrl, string contentRoot, string timeOut)
         {
-            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale_cuda=640:360 -qp 23 -c:v h264_nvenc -r 24 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
-                
-            Process process = new();
-            process.StartInfo.FileName = fileName;
-            process.StartInfo.Arguments = cmdLine;
+            string cmdLine = $@"ffmpeg -hwaccel cuda -hwaccel_output_format cuda -t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale_cuda=640:360 -qp 23 -c:v h264_nvenc -r 24 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
 
-            process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            //Process process = new();
+            //process.StartInfo.FileName = fileName;
+            //process.StartInfo.Arguments = cmdLine;
 
-            process.StartInfo.CreateNoWindow = true;
-            process.StartInfo.UseShellExecute = false;
+            //process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-            process.Start();
+            //process.StartInfo.CreateNoWindow = true;
+            //process.StartInfo.UseShellExecute = false;
+
+            //process.Start();
+            using var ps = PowerShell.Create();
+            ps.AddScript(cmdLine);
+            ps.Invoke();
         }
 
 
