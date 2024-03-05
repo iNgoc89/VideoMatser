@@ -159,12 +159,12 @@ namespace FFmpegWebAPI.Controllers
                 long? ThuMucWSID = 0;
                 string ThuMucDuongDan = string.Empty;
                 var thuMuc = _xmhtService.TaoThuMuc(null, ThuMucVideoSave, DateTime.Now.ToString("yyyyMM"), ref ThuMucWSID, ref ThuMucDuongDan);
-                var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc).Result;
-                var urlTxt = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucCmdDelete).Result;
+                var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
+                var urlTxt = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucCmdDelete);
 
                 long thuMucConId = 0;
                 var idThuMucLuuLay = _xmhtService.P_ThuMuc_LayTheoThuMucCha(null, ThuMucVideoDelete, videoConcatRequest.CameraId.ToString(), ref thuMucConId);
-                var urlLuuLay = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLuuLay).Result;
+                var urlLuuLay = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLuuLay);
                 if (urlLuu != null && urlTxt != null && idThuMucLuuLay > 0 && urlLuuLay != null)
                 {
                     var checkFile = _workVideoService.CheckFile(videoConcatRequest.CameraId, urlLuuLay.DuongDan, videoConcatRequest.BeginDate, videoConcatRequest.EndDate);

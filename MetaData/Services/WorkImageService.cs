@@ -30,7 +30,7 @@ namespace MetaData.Services
             long? ThuMucWSID = 0;
             string ThuMucDuongDan = string.Empty;
             var thuMuc = _xmhtService.TaoThuMuc(null, thuMucCha, tenThuMucCon, ref ThuMucWSID, ref ThuMucDuongDan);
-            var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc).Result;
+            var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
 
             var fileName = imageRequest.GID + ".jpg";
             var imageUri = $"/{thuMucVirtual}/" + tenThuMucCon + "/" + fileName;

@@ -21,7 +21,7 @@ namespace MetaData.Services
         }
         public long TaoThuMuc(Guid? SessionID, long? ThuMucChaID, string TenThuMuc, ref long? ThuMucID, ref string DuongDan)
         {
-            var tmc = P_ThuMuc_LayTheoID(SessionID, ThuMucChaID).Result;
+            var tmc = P_ThuMuc_LayTheoID(SessionID, ThuMucChaID);
 
             long ret;
             if (tmc != null)
@@ -62,7 +62,7 @@ namespace MetaData.Services
         }
 
 
-        public async Task<ThuMuc?> P_ThuMuc_LayTheoID(Guid? guid, long? id)
+        public ThuMuc? P_ThuMuc_LayTheoID(Guid? guid, long? id)
         {
             using (var connection = Connection)
             {
@@ -78,7 +78,7 @@ namespace MetaData.Services
                     });
 
 
-                    var ret = await connection.QueryAsync<ThuMuc>(sql: sql, param: pars,
+                    var ret =  connection.Query<ThuMuc>(sql: sql, param: pars,
                      commandType: CommandType.StoredProcedure);
 
                     return ret.FirstOrDefault() ?? null;

@@ -53,7 +53,7 @@ namespace WorkerVideoCameraService.Services
         {
             if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0)
             {
-                var kq = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucLay).Result;
+                var kq = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucLay);
                 if (kq != null)
                 {
                   
@@ -69,7 +69,7 @@ namespace WorkerVideoCameraService.Services
                             var thuMuc = _xmhtService.TaoThuMuc(null, ThuMucLay, cam.CameraId.ToString(), ref ThuMucWSID, ref ThuMucDuongDan);
 
                             var fileName = cam.CameraId + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
-                            var camId = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc).Result;
+                            var camId = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
                             if (camId != null && thuMuc > 0)
                             {
                                 DuongDanFile = Path.Combine(camId.DuongDan, fileName);

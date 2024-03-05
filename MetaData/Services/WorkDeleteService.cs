@@ -18,7 +18,7 @@ namespace MetaData.Services
 
         public async Task DeleteFiles(long? thuMucLay, double timeDelete, CancellationToken stoppingToken)
         {
-            var kq = _xmhtService.P_ThuMuc_LayTheoID(null, thuMucLay).Result;
+            var kq = _xmhtService.P_ThuMuc_LayTheoID(null, thuMucLay);
             if (kq != null)
             {
                 string? ThuMucDuongDan = kq.DuongDan;
