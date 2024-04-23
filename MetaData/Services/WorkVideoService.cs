@@ -151,7 +151,7 @@ namespace MetaData.Services
             }
             else
             {
-                files = CheckFile(camId, ThuMucVideo, DateTime.Now, DateTime.Now.AddSeconds(5));
+                files = CheckFile(camId, ThuMucVideo, DateTime.Now.AddSeconds(-5), DateTime.Now);
             }
        
             if (files?.Length > 0)
