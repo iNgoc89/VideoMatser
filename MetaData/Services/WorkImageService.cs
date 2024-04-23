@@ -98,7 +98,7 @@ namespace MetaData.Services
             return new JsonResult(imageReturl);
         }
 
-        public async Task<JsonResult> WorkImageFromVideoRequest(ImageFromVideoRequest imageRequest, long? thuMucCha, string tenThuMucCon)
+        public async Task<JsonResult> WorkImageFromVideoRequest(ImageFromVideoRequest imageRequest, long? thuMucCha, string tenThuMucCon, long? thuMucLuuAnh)
         {
             List<ImageReturn> imageReturls = new List<ImageReturn>();
 
@@ -107,17 +107,19 @@ namespace MetaData.Services
             var thuMuc = _xmhtService.TaoThuMuc(null, thuMucCha, tenThuMucCon, ref ThuMucWSID, ref ThuMucDuongDan);
             var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
 
+            var urlLuuAnh = _xmhtService.P_ThuMuc_LayTheoID(null, thuMucLuuAnh);
+
             var fileName = imageRequest.GID + "_%d.jpg";
 
-            if (thuMuc > 0 && urlLuu != null)
+            if (thuMuc > 0 && urlLuu != null && urlLuuAnh != null)
             {
-                var urlImageSave = Path.Combine(urlLuu.DuongDan, fileName);
+                var urlImageSave = Path.Combine(urlLuuAnh.DuongDan, fileName);
 
                 //Tạo ảnh
                 await _workVideoService.GetImageFromVideo(imageRequest.CameraId, urlLuu.DuongDan, imageRequest.BeginDate, imageRequest.EndDate, imageRequest.AnhTrenGiay, urlImageSave);
 
                 //Lấy danh sách ảnh
-                var images = _workVideoService.FindFile(urlLuu.DuongDan, imageRequest.GID.ToString());
+                var images = _workVideoService.FindFile(urlLuuAnh.DuongDan, imageRequest.GID.ToString());
                 if (images?.Count > 0)
                 {
                     imageReturls = images;

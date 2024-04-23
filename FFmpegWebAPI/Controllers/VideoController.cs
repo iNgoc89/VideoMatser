@@ -304,7 +304,7 @@ namespace FFmpegWebAPI.Controllers
             try
             {
 
-                return await _workImageService.WorkImageFromVideoRequest(imageRequest, ThuMucVideoDelete , imageRequest.CameraId.ToString());
+                return await _workImageService.WorkImageFromVideoRequest(imageRequest, ThuMucVideoDelete , imageRequest.CameraId.ToString(), ThuMucImageDelete);
 
             }
             catch (Exception ex)
