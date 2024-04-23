@@ -107,7 +107,9 @@ namespace MetaData.Services
             var thuMuc = _xmhtService.TaoThuMuc(null, thuMucCha, tenThuMucCon, ref ThuMucWSID, ref ThuMucDuongDan);
             var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
 
-            var urlLuuAnh = _xmhtService.P_ThuMuc_LayTheoID(null, thuMucLuuAnh);
+
+            var thuMucLuu = _xmhtService.TaoThuMuc(null, thuMucLuuAnh, imageRequest.CameraId.ToString(), ref ThuMucWSID, ref ThuMucDuongDan);
+            var urlLuuAnh = _xmhtService.P_ThuMuc_LayTheoID(null, thuMucLuu);
 
             var fileName = imageRequest.GID + "_%d.jpg";
 
