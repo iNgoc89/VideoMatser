@@ -295,28 +295,16 @@ namespace FFmpegWebAPI.Controllers
                 return new JsonResult(imageReturl);
             }
 
-            if (TypeImage == 0)
+            if (ThuMucVideoDelete == 0)
             {
-                imageReturl.ErrMsg = "Type Image sai, xem lại appsetting!";
-                return new JsonResult(imageReturl);
-            }
-
-            if (TimeOut == "0")
-            {
-                imageReturl.ErrMsg = "Timeout sai, xem lại appsetting!";
-                return new JsonResult(imageReturl);
-            }
-
-            if (string.IsNullOrEmpty(ImageVirtual))
-            {
-                imageReturl.ErrMsg = "Thư mục ảo hóa sai, xem lại appsetting!";
+                imageReturl.ErrMsg = "Thư mục videp sai, xem lại appsetting!";
                 return new JsonResult(imageReturl);
             }
 
             try
             {
 
-                return await _workImageService.WorkImageFromVideoRequest(imageRequest, ThuMucImageDelete);
+                return await _workImageService.WorkImageFromVideoRequest(imageRequest, ThuMucVideoDelete , imageRequest.CameraId.ToString());
 
             }
             catch (Exception ex)

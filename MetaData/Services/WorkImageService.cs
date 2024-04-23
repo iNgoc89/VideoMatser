@@ -98,10 +98,13 @@ namespace MetaData.Services
             return new JsonResult(imageReturl);
         }
 
-        public async Task<JsonResult> WorkImageFromVideoRequest(ImageFromVideoRequest imageRequest, long? thuMuc)
+        public async Task<JsonResult> WorkImageFromVideoRequest(ImageFromVideoRequest imageRequest, long? thuMucCha, string tenThuMucCon)
         {
             List<ImageReturn> imageReturls = new List<ImageReturn>();
 
+            long? ThuMucWSID = 0;
+            string ThuMucDuongDan = string.Empty;
+            var thuMuc = _xmhtService.TaoThuMuc(null, thuMucCha, tenThuMucCon, ref ThuMucWSID, ref ThuMucDuongDan);
             var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
 
             var fileName = imageRequest.GID + "_%d.jpg";
