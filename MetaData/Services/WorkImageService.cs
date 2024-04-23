@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MetaData.Services
 {
@@ -95,6 +96,34 @@ namespace MetaData.Services
 
             imageReturl.ErrMsg = $"Đường dẫn lưu image không tồn tại! {thuMuc} - {urlLuu}";
             return new JsonResult(imageReturl);
+        }
+
+        public async Task<JsonResult> WorkImageFromVideoRequest(ImageFromVideoRequest imageRequest, long? thuMuc)
+        {
+            List<ImageReturn> imageReturls = new List<ImageReturn>();
+
+            var urlLuu = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
+
+            var fileName = imageRequest.GID + "_%d.jpg";
+
+            if (thuMuc > 0 && urlLuu != null)
+            {
+                var urlImageSave = Path.Combine(urlLuu.DuongDan, fileName);
+
+                //Tạo ảnh
+                await _workVideoService.GetImageFromVideo(imageRequest.CameraId, urlLuu.DuongDan, imageRequest.BeginDate, imageRequest.EndDate, imageRequest.AnhTrenGiay, urlImageSave);
+
+                //Lấy danh sách ảnh
+                var images = _workVideoService.FindFile(urlLuu.DuongDan, imageRequest.GID.ToString());
+                if (images?.Count > 0)
+                {
+                    imageReturls = images;
+                    return new JsonResult(imageReturls);
+                }   
+
+            }
+
+            return new JsonResult(imageReturls);
         }
     }
 }

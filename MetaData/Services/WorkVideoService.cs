@@ -1,4 +1,5 @@
 ﻿using MetaData.Context;
+using MetaData.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -139,6 +140,48 @@ namespace MetaData.Services
 
             await RunProcessAsync(CMD, cmdLine);
 
+        }
+
+        public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime beginDate, DateTime endDate, double anhTrenGiay, string contentRoot)
+        {
+            string[]? files = CheckFile(camId, ThuMucVideo, beginDate, endDate);
+            if (files?.Length > 0)
+            {
+                var file = files.First();
+                if (file.Length > 0)
+                {
+                    string cmdLine = $@"/C ffmpeg -i {file} -vf fps=1/{anhTrenGiay} {contentRoot} -y -loglevel quiet -an -hide_banner";
+
+                    await RunProcessAsync(CMD, cmdLine);
+                }
+            }
+
+        }
+
+        public List<ImageReturn> FindFile(string path, string nameFile)
+        {
+            List<ImageReturn > result = new List<ImageReturn>();
+            string[] files = Directory.GetFiles(path, $"{nameFile}*", SearchOption.TopDirectoryOnly);
+
+            foreach (var file in files)
+            {
+                using (var stream = File.Open(file, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+                {
+                    if (file.Length > 0)
+                    {
+                        var base64Image = ImageToBase64(file);
+
+                        ImageReturn imageReturn = new ImageReturn();
+                        imageReturn.Base64 = base64Image;
+                        imageReturn.ErrMsg = "Lấy ảnh thành công!";
+
+                        result.Add(imageReturn);
+                    }
+                    stream.Close();
+                }
+            }
+
+            return result;
         }
         protected virtual bool IsFileLocked(FileInfo file)
         {

@@ -284,5 +284,46 @@ namespace FFmpegWebAPI.Controllers
             }
         }
 
+        [HttpPost("ImageFromVideo")]
+        public async Task<JsonResult> PostImageFromVideo([FromBody] ImageFromVideoRequest imageRequest)
+        {
+            ImageReturn imageReturl = new();
+
+            if (ThuMucImageDelete == 0 || ThuMucImageSave == 0)
+            {
+                imageReturl.ErrMsg = "Id thư mục Image sai, xem lại appsetting!";
+                return new JsonResult(imageReturl);
+            }
+
+            if (TypeImage == 0)
+            {
+                imageReturl.ErrMsg = "Type Image sai, xem lại appsetting!";
+                return new JsonResult(imageReturl);
+            }
+
+            if (TimeOut == "0")
+            {
+                imageReturl.ErrMsg = "Timeout sai, xem lại appsetting!";
+                return new JsonResult(imageReturl);
+            }
+
+            if (string.IsNullOrEmpty(ImageVirtual))
+            {
+                imageReturl.ErrMsg = "Thư mục ảo hóa sai, xem lại appsetting!";
+                return new JsonResult(imageReturl);
+            }
+
+            try
+            {
+
+                return await _workImageService.WorkImageFromVideoRequest(imageRequest, ThuMucImageDelete);
+
+            }
+            catch (Exception ex)
+            {
+                imageReturl.ErrMsg = ex.Message;
+                return new JsonResult(imageReturl);
+            }
+        }
     }
 }
