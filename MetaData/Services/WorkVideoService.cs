@@ -142,9 +142,18 @@ namespace MetaData.Services
 
         }
 
-        public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime beginDate, DateTime endDate, double anhTrenGiay, string contentRoot)
+        public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime? beginDate, DateTime? endDate, double anhTrenGiay, string contentRoot)
         {
-            string[]? files = CheckFile(camId, ThuMucVideo, beginDate, endDate);
+            string[]? files = null;
+            if (beginDate.HasValue && endDate.HasValue)
+            {
+                files = CheckFile(camId, ThuMucVideo, beginDate.Value, endDate.Value);
+            }
+            else
+            {
+                files = CheckFile(camId, ThuMucVideo, DateTime.Now, DateTime.Now.AddSeconds(5));
+            }
+       
             if (files?.Length > 0)
             {
                 var file = files.First();

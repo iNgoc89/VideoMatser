@@ -12,7 +12,7 @@ namespace MetaData.Models
         public int CameraId { get; set; }
 
         public double AnhTrenGiay { get; set; }
-        public DateTime BeginDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public DateTime? BeginDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
 }
