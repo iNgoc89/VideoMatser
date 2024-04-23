@@ -163,23 +163,31 @@ namespace MetaData.Services
             List<ImageReturn > result = new List<ImageReturn>();
             string[] files = Directory.GetFiles(path, $"{nameFile}*", SearchOption.TopDirectoryOnly);
 
+            List<string> listFile = new List<string>();
+
             foreach (var file in files)
             {
                 using (var stream = File.Open(file, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
                 {
                     if (file.Length > 0)
                     {
-                        var base64Image = ImageToBase64(file);
-
-                        ImageReturn imageReturn = new ImageReturn();
-                        imageReturn.Base64 = base64Image;
-                        imageReturn.ErrMsg = "Lấy ảnh thành công!";
-
-                        result.Add(imageReturn);
+                        listFile.Add(file);
                     }
                     stream.Close();
                 }
             }
+
+            foreach (var file in listFile)
+            {
+                var base64Image = ImageToBase64(file);
+
+                ImageReturn imageReturn = new ImageReturn();
+                imageReturn.Base64 = base64Image;
+                imageReturn.ErrMsg = "Lấy ảnh thành công!";
+
+                result.Add(imageReturn);
+            }
+          
 
             return result;
         }
