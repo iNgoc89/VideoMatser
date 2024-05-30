@@ -120,14 +120,8 @@ namespace MetaData.Services
                 //Tạo ảnh
                 await _workVideoService.GetImageFromVideo(imageRequest.CameraId, urlLuu.DuongDan, imageRequest.BeginDate, imageRequest.EndDate, imageRequest.AnhTrenGiay, urlImageSave);
 
-                //crop ảnh
-                if (imageRequest.X != null && imageRequest.Y != null && imageRequest.Width != null  && imageRequest.Height != null)
-                {
-                  await  _workVideoService.CropImage(urlImageSave, urlImageSave, (int)imageRequest.X, (int)imageRequest.Y, (int)imageRequest.Width, (int)imageRequest.Height);
-                }
-             
                 //Lấy danh sách ảnh
-                var images = _workVideoService.FindFile(urlLuuAnh.DuongDan, imageRequest.GID.ToString());
+                var images = await _workVideoService.FindFile(urlLuuAnh.DuongDan, imageRequest.GID.ToString(), imageRequest);
                 if (images?.Count > 0)
                 {
                     imageReturls = images;
@@ -144,18 +138,19 @@ namespace MetaData.Services
                         var camera = cameras.First();
 
                         await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSave, "30000");
-
+                        var fileNameNoVideo = imageRequest.GID + ".jpg";
+                        var urlImageSaveNoVideo = Path.Combine(urlLuuAnh.DuongDan, fileNameNoVideo);
                         //crop ảnh
                         if (imageRequest.X != null && imageRequest.Y != null && imageRequest.Width != null && imageRequest.Height != null)
                         {
-                           await _workVideoService.CropImage(urlImageSave, urlImageSave, (int)imageRequest.X, (int)imageRequest.Y, (int)imageRequest.Width, (int)imageRequest.Height);
+                           await _workVideoService.CropImage(urlImageSaveNoVideo, urlImageSaveNoVideo, (int)imageRequest.X, (int)imageRequest.Y, (int)imageRequest.Width, (int)imageRequest.Height);
                         }
 
                         //Kiểm tra file đã ghi hay chưa
-                        if (System.IO.File.Exists(urlImageSave))
+                        if (System.IO.File.Exists(urlImageSaveNoVideo))
                         {
 
-                            var base64Image = _workVideoService.ImageToBase64(urlImageSave);
+                            var base64Image = _workVideoService.ImageToBase64(urlImageSaveNoVideo);
                             if (!string.IsNullOrEmpty(base64Image))
                             {
                                 

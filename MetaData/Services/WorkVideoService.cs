@@ -177,10 +177,10 @@ namespace MetaData.Services
                 image.Mutate(i => i
                     .Crop(new Rectangle(x, y, width, height)));
                 await using var output = File.Create(outputPath);
-                await image.SaveAsync(outputPath); // Lưu ảnh đã cắt vào đường dẫn đích
+                await image.SaveAsync(outputPath);
             }
         }
-        public List<ImageReturn> FindFile(string path, string nameFile)
+        public async Task<List<ImageReturn>> FindFile(string path, string nameFile, ImageFromVideoRequest imageRequest)
         {
             List<ImageReturn > result = new List<ImageReturn>();
             string[] files = Directory.GetFiles(path, $"{nameFile}*", SearchOption.TopDirectoryOnly);
@@ -201,6 +201,12 @@ namespace MetaData.Services
 
             foreach (var file in listFile)
             {
+                //crop ảnh 
+                if (imageRequest.X != null && imageRequest.Y != null && imageRequest.Width != null && imageRequest.Height != null)
+                {
+                   await  CropImage(file, file, (int)imageRequest.X, (int)imageRequest.Y, (int)imageRequest.Width, (int)imageRequest.Height);
+                }
+
                 var base64Image = ImageToBase64(file);
 
                 ImageReturn imageReturn = new ImageReturn();
@@ -211,8 +217,10 @@ namespace MetaData.Services
             }
           
 
-            return result;
+            return  result;
         }
+
+     
         protected virtual bool IsFileLocked(FileInfo file)
         {
             try
