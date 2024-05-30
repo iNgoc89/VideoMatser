@@ -120,12 +120,60 @@ namespace MetaData.Services
                 //Tạo ảnh
                 await _workVideoService.GetImageFromVideo(imageRequest.CameraId, urlLuu.DuongDan, imageRequest.BeginDate, imageRequest.EndDate, imageRequest.AnhTrenGiay, urlImageSave);
 
+                //crop ảnh
+                if (imageRequest.X != null && imageRequest.Y != null && imageRequest.Width != null  && imageRequest.Height != null)
+                {
+                  await  _workVideoService.CropImage(urlImageSave, urlImageSave, (int)imageRequest.X, (int)imageRequest.Y, (int)imageRequest.Width, (int)imageRequest.Height);
+                }
+             
                 //Lấy danh sách ảnh
                 var images = _workVideoService.FindFile(urlLuuAnh.DuongDan, imageRequest.GID.ToString());
                 if (images?.Count > 0)
                 {
                     imageReturls = images;
                     return new JsonResult(imageReturls);
+                }
+                else
+                {
+                    ImageReturn imageReturn = new ImageReturn();
+                    //Kiểm tra cameraId
+                    var cameras = _iOTContext.CameraBusinesses.Include(x => x.Camera)
+                        .Where(x => x.CameraId == imageRequest.CameraId && x.IsActive == true).ToList();
+                    if (cameras.Count > 0)
+                    {
+                        var camera = cameras.First();
+
+                        await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSave, "30000");
+
+                        //crop ảnh
+                        if (imageRequest.X != null && imageRequest.Y != null && imageRequest.Width != null && imageRequest.Height != null)
+                        {
+                           await _workVideoService.CropImage(urlImageSave, urlImageSave, (int)imageRequest.X, (int)imageRequest.Y, (int)imageRequest.Width, (int)imageRequest.Height);
+                        }
+
+                        //Kiểm tra file đã ghi hay chưa
+                        if (System.IO.File.Exists(urlImageSave))
+                        {
+
+                            var base64Image = _workVideoService.ImageToBase64(urlImageSave);
+                            if (!string.IsNullOrEmpty(base64Image))
+                            {
+                                
+                                imageReturn.Base64 = base64Image;
+                                imageReturn.ErrMsg = "Tạo base64 cho image thành công!";
+                                return new JsonResult(imageReturn);
+                            }
+
+                            imageReturn.ErrMsg = "Lỗi tạo bas64Image!";
+                            return new JsonResult(imageReturn);
+                        }
+
+                        imageReturn.ErrMsg = $"Lỗi file không tồn tại! {urlImageSave}";
+                        return new JsonResult(imageReturn);
+                    }
+
+                    imageReturn.ErrMsg = "Camera không hợp lệ!";
+                    return new JsonResult(imageReturn);
                 }   
 
             }

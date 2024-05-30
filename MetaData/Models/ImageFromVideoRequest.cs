@@ -14,5 +14,10 @@ namespace MetaData.Models
         public double AnhTrenGiay { get; set; }
         public DateTime? BeginDate { get; set; }
         public DateTime? EndDate { get; set; }
+
+        public int? X { get; set; }
+        public int? Y { get; set; }
+        public int? Width { get; set; }
+        public int? Height { get; set; }
     }
 }

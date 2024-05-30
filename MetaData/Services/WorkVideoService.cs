@@ -1,5 +1,7 @@
 ﻿using MetaData.Context;
 using MetaData.Models;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
+using SixLabors.ImageSharp.Processing;
 
 namespace MetaData.Services
 {
@@ -167,6 +170,16 @@ namespace MetaData.Services
 
         }
 
+        public async Task CropImage(string sourcePath, string outputPath, int x, int y, int width, int height)
+        {
+            using (Image<Rgba32> image = SixLabors.ImageSharp.Image.Load<Rgba32>(sourcePath))
+            {
+                image.Mutate(i => i
+                    .Crop(new Rectangle(x, y, width, height)));
+                await using var output = File.Create(outputPath);
+                await image.SaveAsync(outputPath); // Lưu ảnh đã cắt vào đường dẫn đích
+            }
+        }
         public List<ImageReturn> FindFile(string path, string nameFile)
         {
             List<ImageReturn > result = new List<ImageReturn>();
