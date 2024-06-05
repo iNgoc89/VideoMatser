@@ -61,7 +61,7 @@ namespace MetaData.Services
                 {
                     var camera = cameras.First();
 
-                    await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSave, timeOut);
+                    await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSave, timeOut, imageRequest.Width, imageRequest.Height, imageRequest.X, imageRequest.Y);
 
                     //Kiểm tra file đã ghi hay chưa
                     if (System.IO.File.Exists(urlImageSave))
@@ -118,10 +118,10 @@ namespace MetaData.Services
                 var urlImageSave = Path.Combine(urlLuuAnh.DuongDan, fileName);
 
                 //Tạo ảnh
-                await _workVideoService.GetImageFromVideo(imageRequest.CameraId, urlLuu.DuongDan, imageRequest.BeginDate, imageRequest.EndDate, imageRequest.AnhTrenGiay, urlImageSave);
+                await _workVideoService.GetImageFromVideo(imageRequest.CameraId, urlLuu.DuongDan, imageRequest.BeginDate, imageRequest.EndDate, imageRequest.AnhTrenGiay, urlImageSave, imageRequest.Width, imageRequest.Height, imageRequest.X, imageRequest.Y);
 
                 //Lấy danh sách ảnh
-                var images = await _workVideoService.FindFile(urlLuuAnh.DuongDan, imageRequest.GID.ToString(), imageRequest);
+                var images =  _workVideoService.FindFile(urlLuuAnh.DuongDan, imageRequest.GID.ToString());
                 if (images?.Count > 0)
                 {
                     imageReturls = images;
@@ -136,15 +136,11 @@ namespace MetaData.Services
                     if (cameras.Count > 0)
                     {
                         var camera = cameras.First();
-
-                        await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSave, "30000");
                         var fileNameNoVideo = imageRequest.GID + ".jpg";
                         var urlImageSaveNoVideo = Path.Combine(urlLuuAnh.DuongDan, fileNameNoVideo);
-                        //crop ảnh
-                        if (imageRequest.X != null && imageRequest.Y != null && imageRequest.Width != null && imageRequest.Height != null)
-                        {
-                           await _workVideoService.CropImage(urlImageSaveNoVideo, urlImageSaveNoVideo, (int)imageRequest.X, (int)imageRequest.Y, (int)imageRequest.Width, (int)imageRequest.Height);
-                        }
+
+                        await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSaveNoVideo, "30000", imageRequest.Width, imageRequest.Height, imageRequest.X, imageRequest.Y);
+                    
 
                         //Kiểm tra file đã ghi hay chưa
                         if (System.IO.File.Exists(urlImageSaveNoVideo))

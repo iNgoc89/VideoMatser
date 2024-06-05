@@ -137,17 +137,26 @@ namespace MetaData.Services
             return filesReturl;
         }
 
-        public async Task GetImage(string rtspUrl, string contentRoot, string timeOut)
+        public async Task GetImage(string rtspUrl, string contentRoot, string timeOut, int? width, int? height, int? x, int? y)
         {
-            string cmdLine = $@"/C ffmpeg -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M -ss 00:00:01.000 -vframes 1 {contentRoot} -y -loglevel quiet -an -hide_banner";
+            string cmdLine = "";
+            if (x > 0 && y > 0 && width > 0 && height > 0)
+            {
+                cmdLine = $@"/C ffmpeg -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf 'scale=640:360, crop={width}:{height}:{x}:{y}' -r 24 -crf 23 -maxrate 1M -bufsize 2M -ss 00:00:01.000 -vframes 1 {contentRoot} -y -loglevel quiet -an -hide_banner";
+            }
+            else
+            {
+                cmdLine = $@"/C ffmpeg -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M -ss 00:00:01.000 -vframes 1 {contentRoot} -y -loglevel quiet -an -hide_banner";
+            }
 
             await RunProcessAsync(CMD, cmdLine);
 
         }
 
-        public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime? beginDate, DateTime? endDate, double anhTrenGiay, string contentRoot)
+        public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime? beginDate, DateTime? endDate, double anhTrenGiay, string contentRoot, int? x , int? y, int? height, int? width)
         {
             string[]? files = null;
+            string cmdLine = "";
             if (beginDate.HasValue && endDate.HasValue)
             {
                 files = CheckFile(camId, ThuMucVideo, beginDate.Value, endDate.Value);
@@ -162,25 +171,35 @@ namespace MetaData.Services
                 var file = files.First();
                 if (file.Length > 0)
                 {
-                    string cmdLine = $@"/C ffmpeg -i {file} -vf fps=1/{anhTrenGiay} {contentRoot} -y -loglevel quiet -an -hide_banner";
+                   
+                    if (x > 0  && y > 0 && width > 0 && height > 0 )
+                    {
+                        cmdLine = $@"/C ffmpeg -i {file} -vf 'fps=1/{anhTrenGiay} {contentRoot}, crop={width}:{height}:{x}:{y}' -y -loglevel quiet -an -hide_banner";
+                    }
+                    else
+                    {
+                        cmdLine = $@"/C ffmpeg -i {file} -vf fps=1/{anhTrenGiay} {contentRoot} -y -loglevel quiet -an -hide_banner";
+                    }
+                  
 
                     await RunProcessAsync(CMD, cmdLine);
                 }
             }
 
         }
+      
 
-        public async Task CropImage(string sourcePath, string outputPath, int x, int y, int width, int height)
-        {
-            using (Image<Rgba32> image = SixLabors.ImageSharp.Image.Load<Rgba32>(sourcePath))
-            {
-                image.Mutate(i => i
-                    .Crop(new Rectangle(x, y, width, height)));
-                await using var output = File.Create(outputPath);
-                await image.SaveAsync(outputPath);
-            }
-        }
-        public async Task<List<ImageReturn>> FindFile(string path, string nameFile, ImageFromVideoRequest imageRequest)
+        //public async Task CropImage(string sourcePath, string outputPath, int x, int y, int width, int height)
+        //{
+        //    using (Image<Rgba32> image = SixLabors.ImageSharp.Image.Load<Rgba32>(sourcePath))
+        //    {
+        //        image.Mutate(i => i
+        //            .Crop(new Rectangle(x, y, width, height)));
+        //        await using var output = File.Create(outputPath);
+        //        await image.SaveAsync(outputPath);
+        //    }
+        //}
+        public List<ImageReturn> FindFile(string path, string nameFile)
         {
             List<ImageReturn > result = new List<ImageReturn>();
             string[] files = Directory.GetFiles(path, $"{nameFile}*", SearchOption.TopDirectoryOnly);
@@ -201,12 +220,7 @@ namespace MetaData.Services
 
             foreach (var file in listFile)
             {
-                //crop ảnh 
-                if (imageRequest.X != null && imageRequest.Y != null && imageRequest.Width != null && imageRequest.Height != null)
-                {
-                   await  CropImage(file, file, (int)imageRequest.X, (int)imageRequest.Y, (int)imageRequest.Width, (int)imageRequest.Height);
-                }
-
+             
                 var base64Image = ImageToBase64(file);
 
                 ImageReturn imageReturn = new ImageReturn();

@@ -11,5 +11,10 @@ namespace MetaData.Models
         public Guid GID { get; set; }
         public int CameraId { get; set; }
         public bool SaveImage { get; set; }
+
+        public int? X { get; set; }
+        public int? Y { get; set; }
+        public int? Width { get; set; }
+        public int? Height { get; set; }
     }
 }
