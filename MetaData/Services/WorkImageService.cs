@@ -66,6 +66,12 @@ namespace MetaData.Services
                     //Kiểm tra file đã ghi hay chưa
                     if (System.IO.File.Exists(urlImageSave))
                     {
+                        //nếu có tham số mới crop
+                        if (imageRequest.X >= 0 && imageRequest.Y >= 0 && imageRequest.Width > 0 && imageRequest.Height > 0)
+                        {
+                            await _workVideoService.CropImage(urlImageSave, urlImageSave, imageRequest.X, imageRequest.Y, imageRequest.Width, imageRequest.Height);
+                        }
+
                         if (imageRequest.SaveImage == true)
                         {
                             imageReturl.ImageUrl = imageUri;
