@@ -137,23 +137,17 @@ namespace MetaData.Services
             return filesReturl;
         }
 
-        public async Task GetImage(string rtspUrl, string contentRoot, string timeOut, int? width, int? height, int? x, int? y)
+        public async Task GetImage(string rtspUrl, string contentRoot, string timeOut)
         {
             string cmdLine = "";
-            if (x > 0 && y > 0 && width > 0 && height > 0)
-            {
-                cmdLine = $@"/C ffmpeg -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf 'scale=640:360, crop={width}:{height}:{x}:{y}' -r 24 -crf 23 -maxrate 1M -bufsize 2M -ss 00:00:01.000 -vframes 1 {contentRoot} -y -loglevel quiet -an -hide_banner";
-            }
-            else
-            {
-                cmdLine = $@"/C ffmpeg -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M -ss 00:00:01.000 -vframes 1 {contentRoot} -y -loglevel quiet -an -hide_banner";
-            }
+
+            cmdLine = $@"/C ffmpeg -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M -ss 00:00:01.000 -vframes 1 {contentRoot} -y -loglevel quiet -an -hide_banner";
 
             await RunProcessAsync(CMD, cmdLine);
 
         }
 
-        public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime? beginDate, DateTime? endDate, double anhTrenGiay, string contentRoot, int? x , int? y, int? height, int? width)
+        public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime? beginDate, DateTime? endDate, double anhTrenGiay, string contentRoot)
         {
             string[]? files = null;
             string cmdLine = "";
@@ -165,29 +159,21 @@ namespace MetaData.Services
             {
                 files = CheckFile(camId, ThuMucVideo, DateTime.Now.AddSeconds(-5), DateTime.Now);
             }
-       
+
             if (files?.Length > 0)
             {
                 var file = files.First();
                 if (file.Length > 0)
                 {
-                   
-                    if (x > 0  && y > 0 && width > 0 && height > 0 )
-                    {
-                        cmdLine = $@"/C ffmpeg -i {file} -vf 'fps=1/{anhTrenGiay} {contentRoot}, crop={width}:{height}:{x}:{y}' -y -loglevel quiet -an -hide_banner";
-                    }
-                    else
-                    {
-                        cmdLine = $@"/C ffmpeg -i {file} -vf fps=1/{anhTrenGiay} {contentRoot} -y -loglevel quiet -an -hide_banner";
-                    }
-                  
+
+
+                    cmdLine = $@"/C ffmpeg -i {file} -vf fps=1/{anhTrenGiay} {contentRoot} -y -loglevel quiet -an -hide_banner";
 
                     await RunProcessAsync(CMD, cmdLine);
                 }
             }
 
         }
-      
 
         //public async Task CropImage(string sourcePath, string outputPath, int x, int y, int width, int height)
         //{
@@ -199,9 +185,17 @@ namespace MetaData.Services
         //        await image.SaveAsync(outputPath);
         //    }
         //}
-        public List<ImageReturn> FindFile(string path, string nameFile)
+        public async Task CropImage(string sourcePath, string outputPath, int? x, int? y, int? width, int? height)
         {
-            List<ImageReturn > result = new List<ImageReturn>();
+            string cmdLine = "";
+
+            cmdLine = $@"/C ffmpeg -i {sourcePath} -vf crop={width}:{height}:{x}:{y} {outputPath} -y -loglevel quiet -an -hide_banner";
+            await RunProcessAsync(CMD, cmdLine);
+
+        }
+        public async Task<List<ImageReturn>> FindFile(string path, string nameFile, int? x, int? y, int? width, int? height)
+        {
+            List<ImageReturn> result = new List<ImageReturn>();
             string[] files = Directory.GetFiles(path, $"{nameFile}*", SearchOption.TopDirectoryOnly);
 
             List<string> listFile = new List<string>();
@@ -220,8 +214,11 @@ namespace MetaData.Services
 
             foreach (var file in listFile)
             {
-             
-                var base64Image = ImageToBase64(file);
+                if (x >= 0 && y >= 0 && width > 0 && height > 0)
+                {
+                   await CropImage(file, file,x, y, width, height); 
+                }
+                var base64Image = await ImageToBase64(file);
 
                 ImageReturn imageReturn = new ImageReturn();
                 imageReturn.Base64 = base64Image;
@@ -229,12 +226,12 @@ namespace MetaData.Services
 
                 result.Add(imageReturn);
             }
-          
 
-            return  result;
+
+            return result;
         }
 
-     
+
         protected virtual bool IsFileLocked(FileInfo file)
         {
             try
@@ -253,13 +250,13 @@ namespace MetaData.Services
             return false;
         }
 
-        public string ImageToBase64(string path)
+        public async Task<string> ImageToBase64(string path)
         {
             FileInfo file = new FileInfo(path);
             bool fileIsOpen = IsFileLocked(file);
             if (!fileIsOpen)
             {
-                byte[] imageArray = System.IO.File.ReadAllBytes(path);
+                byte[] imageArray = await System.IO.File.ReadAllBytesAsync(path);
                 string base64String = Convert.ToBase64String(imageArray);
                 return base64String;
             }

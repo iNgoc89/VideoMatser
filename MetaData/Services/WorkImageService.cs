@@ -61,7 +61,7 @@ namespace MetaData.Services
                 {
                     var camera = cameras.First();
 
-                    await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSave, timeOut, imageRequest.Width, imageRequest.Height, imageRequest.X, imageRequest.Y);
+                    await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSave, timeOut);
 
                     //Kiểm tra file đã ghi hay chưa
                     if (System.IO.File.Exists(urlImageSave))
@@ -73,7 +73,7 @@ namespace MetaData.Services
                             return new JsonResult(imageReturl);
                         }
 
-                        var base64Image = _workVideoService.ImageToBase64(urlImageSave);
+                        var base64Image = await _workVideoService.ImageToBase64(urlImageSave);
                         if (!string.IsNullOrEmpty(base64Image))
                         {
                             imageReturl.Base64 = base64Image;
@@ -118,10 +118,10 @@ namespace MetaData.Services
                 var urlImageSave = Path.Combine(urlLuuAnh.DuongDan, fileName);
 
                 //Tạo ảnh
-                await _workVideoService.GetImageFromVideo(imageRequest.CameraId, urlLuu.DuongDan, imageRequest.BeginDate, imageRequest.EndDate, imageRequest.AnhTrenGiay, urlImageSave, imageRequest.Width, imageRequest.Height, imageRequest.X, imageRequest.Y);
+                await _workVideoService.GetImageFromVideo(imageRequest.CameraId, urlLuu.DuongDan, imageRequest.BeginDate, imageRequest.EndDate, imageRequest.AnhTrenGiay, urlImageSave);
 
                 //Lấy danh sách ảnh
-                var images =  _workVideoService.FindFile(urlLuuAnh.DuongDan, imageRequest.GID.ToString());
+                var images = await _workVideoService.FindFile(urlLuuAnh.DuongDan, imageRequest.GID.ToString(), imageRequest.X, imageRequest.Y, imageRequest.Width, imageRequest.Height);
                 if (images?.Count > 0)
                 {
                     imageReturls = images;
@@ -139,14 +139,18 @@ namespace MetaData.Services
                         var fileNameNoVideo = imageRequest.GID + ".jpg";
                         var urlImageSaveNoVideo = Path.Combine(urlLuuAnh.DuongDan, fileNameNoVideo);
 
-                        await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSaveNoVideo, "30000", imageRequest.Width, imageRequest.Height, imageRequest.X, imageRequest.Y);
+                        await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSaveNoVideo, "30000");
                     
-
                         //Kiểm tra file đã ghi hay chưa
                         if (System.IO.File.Exists(urlImageSaveNoVideo))
                         {
-
-                            var base64Image = _workVideoService.ImageToBase64(urlImageSaveNoVideo);
+                            //nếu có tham số mới crop
+                            if (imageRequest.X >=0 && imageRequest.Y >= 0 && imageRequest.Width > 0 && imageRequest.Height > 0)
+                            {
+                                await _workVideoService.CropImage(urlImageSaveNoVideo, urlImageSaveNoVideo, imageRequest.X, imageRequest.Y, imageRequest.Width, imageRequest.Height);
+                            }
+                           
+                            var base64Image = await _workVideoService.ImageToBase64(urlImageSaveNoVideo);
                             if (!string.IsNullOrEmpty(base64Image))
                             {
                                 
