@@ -34,8 +34,8 @@ namespace WorkerVideoCameraService.Services
         public static string TimeOut = string.Empty;
         public readonly DateTime timeRun = DateTime.Now;
         public long? ThuMucLay = null;
-      
-       
+
+
         public ScopedProcessingService(IOTContext iOTContext, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
         {
             _iOTContext = iOTContext;
@@ -51,43 +51,34 @@ namespace WorkerVideoCameraService.Services
 
         public async Task RunApp(CancellationToken stoppingToken)
         {
-            if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0)
+            while (!stoppingToken.IsCancellationRequested)
             {
-                var kq = _xmhtService.P_ThuMuc_LayTheoID(null, ThuMucLay);
-                if (kq != null)
+                if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0)
                 {
-                  
-                    while (!stoppingToken.IsCancellationRequested)
+                    var cameras = _iOTContext.CameraBusinesses.Include(x => x.Camera)
+                        .Where(x => x.BusinessId == TypeVideo && x.IsActive == true).ToList();
+
+                    foreach (var cam in cameras)
                     {
-                        var cameras = _iOTContext.CameraBusinesses.Include(x=>x.Camera)
-                            .Where(x => x.BusinessId == TypeVideo && x.IsActive == true).ToList();
+                        long? ThuMucWSID = 0;
+                        string ThuMucDuongDan = string.Empty;
+                        var thuMuc = _xmhtService.TaoThuMuc(null, ThuMucLay, cam.CameraId.ToString(), ref ThuMucWSID, ref ThuMucDuongDan);
 
-                        foreach (var cam in cameras)
+                        var fileName = cam.CameraId + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
+                        var camId = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
+                        if (camId != null && thuMuc > 0)
                         {
-                            long? ThuMucWSID = 0;
-                            string ThuMucDuongDan = string.Empty;
-                            var thuMuc = _xmhtService.TaoThuMuc(null, ThuMucLay, cam.CameraId.ToString(), ref ThuMucWSID, ref ThuMucDuongDan);
+                            DuongDanFile = Path.Combine(camId.DuongDan, fileName);
 
-                            var fileName = cam.CameraId + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
-                            var camId = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
-                            if (camId != null && thuMuc > 0)
-                            {
-                                DuongDanFile = Path.Combine(camId.DuongDan, fileName);
-
-                                //Lưu video
-                                _workVideo.GetVideo(ffmpeg,cam.Camera.RtspUrl, DuongDanFile, TimeOut);
-                            }
-
-                       
+                            //Lưu video
+                            _workVideo.GetVideo(ffmpeg, cam.Camera.RtspUrl, DuongDanFile, TimeOut);
                         }
-                        await Task.Delay(5000, stoppingToken);
                     }
-                 
                 }
-
+                await Task.Delay(5000, stoppingToken);
             }
 
-         
+
         }
     }
 }

@@ -19,9 +19,9 @@ namespace MetaData.Services
         {
             _connectionString = configuration["ConnectionStrings:XMHTConnection"];
         }
-        public long TaoThuMuc(Guid? SessionID, long? ThuMucChaID, string TenThuMuc, ref long? ThuMucID, ref string DuongDan)
+        public  long TaoThuMuc(Guid? SessionID, long? ThuMucChaID, string TenThuMuc, ref long? ThuMucID, ref string DuongDan)
         {
-            var tmc = P_ThuMuc_LayTheoID(SessionID, ThuMucChaID);
+            var tmc =  P_ThuMuc_LayTheoID(SessionID, ThuMucChaID);
 
             long ret;
             if (tmc != null)
@@ -78,7 +78,7 @@ namespace MetaData.Services
                     });
 
 
-                    var ret =  connection.Query<ThuMuc>(sql: sql, param: pars,
+                    var ret = connection.Query<ThuMuc?>(sql: sql, param: pars,
                      commandType: CommandType.StoredProcedure);
 
                     return ret.FirstOrDefault() ?? null;
@@ -87,10 +87,7 @@ namespace MetaData.Services
                 {
                     //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
                 }
-                finally
-                {
-                    if (connection.State == ConnectionState.Open) connection.Close();
-                }
+             
             }
             return null;
         }
@@ -124,10 +121,7 @@ namespace MetaData.Services
                 {
                     //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
                 }
-                finally
-                {
-                    if (connection.State == ConnectionState.Open) connection.Close();
-                }
+        
             }
             return 0;
         }
@@ -160,10 +154,7 @@ namespace MetaData.Services
                 {
                     //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
                 }
-                finally
-                {
-                    if (connection.State == ConnectionState.Open) connection.Close();
-                }
+            
             }
             return 0;
         }
