@@ -35,10 +35,7 @@ namespace WorkerVideoCameraService.Services
                 {
 
                 }
-                finally
-                {
-                    await StopAsync(stoppingToken);
-                }
+           
 
             }
         }

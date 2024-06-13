@@ -37,11 +37,7 @@ namespace WorkerVideoCameraService.Services
                 {
                     _logger.LogError(ex, "{Message}", ex.Message);
                 }
-                finally
-                {
-                    await StopAsync(stoppingToken);
-                }
-             
+            
             }
         }
 
