@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using MetaData.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Data;
@@ -110,6 +111,33 @@ namespace MetaData.Services
                 }
             }
 
+        }
+
+        public List<CameraModel> GetCameras()
+        {
+            List<CameraModel> cameras = new List<CameraModel>();
+            using (var connection = Connection)
+            {
+                connection.Open();
+                string sql = $"select * from cmrs.GetCameraData";
+                try
+                {
+                    cameras = connection.Query<CameraModel>(sql: sql,
+                     commandType: CommandType.Text).ToList();
+
+                    return cameras;
+                }
+                catch (Exception ex)
+                {
+                    var mess = ex.Message;
+                }
+                finally
+                {
+                    if (connection.State == ConnectionState.Open) connection.Close();
+                }
+            }
+
+            return cameras;
         }
     }
 }

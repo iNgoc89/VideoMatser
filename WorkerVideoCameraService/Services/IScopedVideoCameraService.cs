@@ -2,6 +2,7 @@
 using MetaData.Context;
 using MetaData.Data;
 using MetaData.Services;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +24,7 @@ namespace WorkerVideoCameraService.Services
     internal class ScopedProcessingService : IScopedVideoCameraService
     {
         public IOTContext _iOTContext;
+        public IOTService _iOTService;
         public XmhtService _xmhtService;
         public IConfiguration _configuration;
         public WorkVideoService _workVideo;
@@ -38,9 +40,10 @@ namespace WorkerVideoCameraService.Services
 
         CameraData CameraData;
 
-        public ScopedProcessingService(IOTContext iOTContext, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
+        public ScopedProcessingService(IOTContext iOTContext, IOTService iOTService, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
         {
             _iOTContext = iOTContext;
+            _iOTService = iOTService;
             _xmhtService = xmhtService;
             _workVideo = workVideo;
             _configuration = configuration;
@@ -51,21 +54,21 @@ namespace WorkerVideoCameraService.Services
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
 
             CameraData = CameraData.getInstance();
+            if (CameraData.Cameras.Count == 0)
+            {
+                CameraData.Cameras = _iOTService.GetCameras().ToList();
+            }
         }
 
         public async Task RunApp(CancellationToken stoppingToken)
         {
-            CameraData.CameraBusinesses = new();
-            CameraData.CameraBusinesses = await _iOTContext.CameraBusinesses.Include(x => x.Camera)
-                   .Where(x => x.BusinessId == TypeVideo && x.IsActive == true).ToListAsync();
-
             while (!stoppingToken.IsCancellationRequested)
             {
                 if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0)
                 {
-                    if (CameraData.CameraBusinesses.Count > 0)
+                    if (CameraData.Cameras.Count > 0)
                     {
-                        foreach (var cam in CameraData.CameraBusinesses)
+                        foreach (var cam in CameraData.Cameras.Where(x => x.BusinessId == TypeVideo))
                         {
                             long? ThuMucWSID = 0;
                             string ThuMucDuongDan = string.Empty;
@@ -78,13 +81,13 @@ namespace WorkerVideoCameraService.Services
                                 DuongDanFile = Path.Combine(camId.DuongDan, fileName);
 
                                 //Lưu video
-                                _workVideo.GetVideo(ffmpeg, cam.Camera.RtspUrl, DuongDanFile, TimeOut);
+                                _workVideo.GetVideo(ffmpeg, cam.RtspUrl, DuongDanFile, TimeOut);
                             }
                         }
                     }
 
                 }
-                await Task.Delay(5000, stoppingToken);
+                await Task.Delay(5500, stoppingToken);
             }
 
 

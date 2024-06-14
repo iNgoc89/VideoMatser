@@ -1,4 +1,5 @@
 ﻿using MetaData.Context;
+using MetaData.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,6 @@ namespace MetaData.Data
             return instance;
         }
 
-        public List<CameraBusiness> CameraBusinesses = new();
+        public List<CameraModel> Cameras = new();
     }
 }

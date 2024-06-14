@@ -1,4 +1,5 @@
 ﻿using MetaData.Context;
+using MetaData.Data;
 using MetaData.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,12 +18,23 @@ namespace MetaData.Services
     {
         public XmhtService _xmhtService;
         public IOTContext _iOTContext;
+        public IOTService _iOTService;
         public WorkVideoService _workVideoService;
-        public WorkImageService(XmhtService xmhtService, IOTContext iOTContext, WorkVideoService workVideoService) 
+
+        CameraData CameraData;
+        public WorkImageService(XmhtService xmhtService, IOTContext iOTContext, IOTService iOTService, WorkVideoService workVideoService) 
         {
             _xmhtService = xmhtService;
             _iOTContext = iOTContext;
+            _iOTService = iOTService;
             _workVideoService = workVideoService;
+
+            CameraData = CameraData.getInstance();
+            if (CameraData.Cameras.Count == 0)
+            {
+                CameraData.Cameras = _iOTService.GetCameras().ToList();
+            }
+            
         }
         public async Task<JsonResult> WorkImageRequest(ImageGetRequest imageRequest, long? thuMucCha, string tenThuMucCon, int typeImage, string timeOut, string thuMucVirtual)
         {
@@ -55,13 +67,13 @@ namespace MetaData.Services
                 }
 
                 //Kiểm tra cameraId
-                var cameras = _iOTContext.CameraBusinesses.Include(x => x.Camera)
-                    .Where(x => x.CameraId == imageRequest.CameraId && x.BusinessId == typeImage && x.IsActive == true).ToList();
+                var cameras = CameraData.Cameras.Where(x => x.CameraId == imageRequest.CameraId && x.BusinessId == typeImage).ToList();
+
                 if (cameras.Count > 0)
                 {
                     var camera = cameras.First();
 
-                    await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSave, timeOut);
+                    await _workVideoService.GetImage(camera.RtspUrl, urlImageSave, timeOut);
 
                     //Kiểm tra file đã ghi hay chưa
                     if (System.IO.File.Exists(urlImageSave))
@@ -137,15 +149,15 @@ namespace MetaData.Services
                 {
                     ImageReturn imageReturn = new ImageReturn();
                     //Kiểm tra cameraId
-                    var cameras = _iOTContext.CameraBusinesses.Include(x => x.Camera)
-                        .Where(x => x.CameraId == imageRequest.CameraId && x.IsActive == true).ToList();
+                    var cameras = CameraData.Cameras.Where(x => x.CameraId == imageRequest.CameraId).ToList();
+
                     if (cameras.Count > 0)
                     {
                         var camera = cameras.First();
                         var fileNameNoVideo = imageRequest.GID + ".jpg";
                         var urlImageSaveNoVideo = Path.Combine(urlLuuAnh.DuongDan, fileNameNoVideo);
 
-                        await _workVideoService.GetImage(camera.Camera.RtspUrl, urlImageSaveNoVideo, "30000");
+                        await _workVideoService.GetImage(camera.RtspUrl, urlImageSaveNoVideo, "30000");
                     
                         //Kiểm tra file đã ghi hay chưa
                         if (System.IO.File.Exists(urlImageSaveNoVideo))

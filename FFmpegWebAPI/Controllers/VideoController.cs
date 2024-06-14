@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MetaData.Context;
+using MetaData.Data;
 using MetaData.Models;
 using MetaData.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,7 @@ namespace FFmpegWebAPI.Controllers
         public string TimeOut = string.Empty;
         public int TypeVideo = 0;
         public int TypeImage = 0;
+        CameraData CameraData;
         public VideoController(IOTContext iOTContext, IOTService iOTService, WorkVideoService workVideoService, XmhtService xmhtService, WorkImageService workImageService, IConfiguration configuration)
         {
             _iOTContext = iOTContext;
@@ -41,7 +43,6 @@ namespace FFmpegWebAPI.Controllers
             _xmhtService = xmhtService;
             _workImageService = workImageService;
             _configuration = configuration;
-
 
             ThuMucVideoDelete = long.Parse(_configuration["ThuMucNghiepVu:VideoDelete"] ?? "0");
             ThuMucVideoSave = long.Parse(_configuration["ThuMucNghiepVu:VideoSave"] ?? "0");
@@ -56,6 +57,11 @@ namespace FFmpegWebAPI.Controllers
             ImageVirtual = _configuration["ThuMucNghiepVu:ImageVirtual"] ?? "";
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
 
+            CameraData = CameraData.getInstance();
+            if (CameraData.Cameras.Count == 0)
+            {
+                CameraData.Cameras = _iOTService.GetCameras().ToList();
+            }
 
         }
 
@@ -145,8 +151,8 @@ namespace FFmpegWebAPI.Controllers
             }
 
             //Kiểm tra cameraId có tồn tại hay ko
-            var cameras = _iOTContext.CameraBusinesses.Include(x => x.Camera)
-                   .Where(x => x.CameraId == videoConcatRequest.CameraId && x.BusinessId == TypeVideo && x.IsActive == true).ToList();
+            var cameras = CameraData.Cameras
+                   .Where(x => x.CameraId == videoConcatRequest.CameraId && x.BusinessId == TypeVideo).ToList();
             if (cameras.Count == 0)
             {
                 videoReturl.ErrMsg = "Camera không tồn tại trên hệ thống!";
