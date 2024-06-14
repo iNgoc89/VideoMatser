@@ -51,13 +51,14 @@ namespace WorkerVideoCameraService.Services
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
 
             CameraData = CameraData.getInstance();
-
-            CameraData.CameraBusinesses = _iOTContext.CameraBusinesses.Include(x => x.Camera)
-                   .Where(x => x.BusinessId == TypeVideo && x.IsActive == true).ToList();
         }
 
         public async Task RunApp(CancellationToken stoppingToken)
         {
+            CameraData.CameraBusinesses = new();
+            CameraData.CameraBusinesses = await _iOTContext.CameraBusinesses.Include(x => x.Camera)
+                   .Where(x => x.BusinessId == TypeVideo && x.IsActive == true).ToListAsync();
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0)

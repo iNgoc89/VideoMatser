@@ -18,11 +18,15 @@ namespace WorkerVideoCameraService.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _logger.LogInformation("Service running.");
+            stoppingToken.Register(() => _logger.LogInformation("Timed Hosted Service is stopping."));
             await RunApp(stoppingToken);
         }
 
         private async Task RunApp(CancellationToken stoppingToken)
         {
+            _logger.LogInformation("Service is working.");
+
             using (var scope = _services.CreateScope())
             {
                 try
@@ -43,6 +47,8 @@ namespace WorkerVideoCameraService.Services
 
         public override async Task StopAsync(CancellationToken stoppingToken)
         {
+            _logger.LogInformation("Service is stopping.");
+
             await base.StopAsync(stoppingToken);
         }
     }
