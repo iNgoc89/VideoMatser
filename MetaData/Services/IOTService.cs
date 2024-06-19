@@ -119,7 +119,7 @@ namespace MetaData.Services
             using (var connection = Connection)
             {
                 connection.Open();
-                string sql = $"select * from cmrs.GetCameraData";
+                string sql = $"select * from cmrs.GetCameraData()";
                 try
                 {
                     cameras = connection.Query<CameraModel>(sql: sql,

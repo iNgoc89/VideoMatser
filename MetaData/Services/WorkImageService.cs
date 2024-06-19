@@ -73,7 +73,7 @@ namespace MetaData.Services
                 {
                     var camera = cameras.First();
 
-                    await _workVideoService.GetImage(camera.RtspUrl, urlImageSave, timeOut);
+                   await _workVideoService.GetImage(camera.RtspUrl, urlImageSave, timeOut);
 
                     //Kiểm tra file đã ghi hay chưa
                     if (System.IO.File.Exists(urlImageSave))
@@ -157,7 +157,7 @@ namespace MetaData.Services
                         var fileNameNoVideo = imageRequest.GID + ".jpg";
                         var urlImageSaveNoVideo = Path.Combine(urlLuuAnh.DuongDan, fileNameNoVideo);
 
-                        await _workVideoService.GetImage(camera.RtspUrl, urlImageSaveNoVideo, "30000");
+                       await  _workVideoService.GetImage(camera.RtspUrl, urlImageSaveNoVideo, "30000");
                     
                         //Kiểm tra file đã ghi hay chưa
                         if (System.IO.File.Exists(urlImageSaveNoVideo))

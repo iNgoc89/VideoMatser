@@ -32,6 +32,7 @@ namespace FFmpegWebAPI.Controllers
         public string? VideoVirtual = string.Empty;
         public string? ImageVirtual = string.Empty;
         public string TimeOut = string.Empty;
+        public static string? ffmpeg = string.Empty;
         public int TypeVideo = 0;
         public int TypeImage = 0;
         CameraData CameraData;
@@ -56,6 +57,8 @@ namespace FFmpegWebAPI.Controllers
             VideoVirtual = _configuration["ThuMucNghiepVu:VideoVirtual"] ?? "";
             ImageVirtual = _configuration["ThuMucNghiepVu:ImageVirtual"] ?? "";
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
+
+            ffmpeg = _configuration["FFmpeg:Url"];
 
             CameraData = CameraData.getInstance();
             if (CameraData.Cameras.Count == 0)
@@ -274,7 +277,7 @@ namespace FFmpegWebAPI.Controllers
             {
                 if (imageRequest.SaveImage == true)
                 {
-                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ImageVirtual);
+                    return await  _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ImageVirtual);
                 }
                 else
                 {
@@ -304,6 +307,12 @@ namespace FFmpegWebAPI.Controllers
             if (ThuMucVideoDelete == 0)
             {
                 imageReturl.ErrMsg = "Thư mục videp sai, xem lại appsetting!";
+                return new JsonResult(imageReturl);
+            }
+
+            if (TypeImage == 0)
+            {
+                imageReturl.ErrMsg = "Type Image sai, xem lại appsetting!";
                 return new JsonResult(imageReturl);
             }
 

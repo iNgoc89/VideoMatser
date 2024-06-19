@@ -26,7 +26,7 @@ namespace MetaData.Services
         }
         public void GetVideo(string? fileName, string rtspUrl, string contentRoot, string timeOut)
         {
-            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 5 -rtsp_transport tcp -timeout {timeOut} -r 25 -i {rtspUrl} -c:v h264_nvenc -r 25 -maxrate 5M -bufsize 10M {contentRoot} -y -loglevel quiet -an -hide_banner";
+            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 5 -rtsp_transport tcp -timeout {timeOut} -r 25 -i {rtspUrl} -c:v h264_nvenc -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
 
             Process process = new();
             process.StartInfo.FileName = fileName;
@@ -141,11 +141,13 @@ namespace MetaData.Services
         {
             string cmdLine = "";
 
-            cmdLine = $@"/C ffmpeg -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -vf scale=640:360 -r 24 -crf 23 -maxrate 1M -bufsize 2M -ss 00:00:01.000 -vframes 1 {contentRoot} -y -loglevel quiet -an -hide_banner";
+            cmdLine = $@"/C ffmpeg -rtsp_transport tcp -xerror -timeout {timeOut} -i {rtspUrl} -vf scale=640:480 -r 25  -maxrate 1M -bufsize 2M -frames:v 1 {contentRoot} -y -loglevel quiet -an -hide_banner & exit /b";
 
             await RunProcessAsync(CMD, cmdLine);
 
         }
+
+
 
         public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime? beginDate, DateTime? endDate, double anhTrenGiay, string contentRoot)
         {

@@ -87,7 +87,7 @@ namespace WorkerVideoCameraService.Services
                     }
 
                 }
-                await Task.Delay(5500, stoppingToken);
+                await Task.Delay(5000, stoppingToken);
             }
 
 
