@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 using SixLabors.ImageSharp.Processing;
+using Microsoft.Extensions.Logging;
 
 namespace MetaData.Services
 {
@@ -20,27 +21,27 @@ namespace MetaData.Services
         public IOTContext _iOTContext;
         public string txtCmdConcat = string.Empty;
         public string CMD = "CMD.exe";
-        public WorkVideoService(IOTContext iOTContext)
+        private readonly ILogger<WorkVideoService> _logger;
+        public WorkVideoService(IOTContext iOTContext, ILogger<WorkVideoService> logger)
         {
             _iOTContext = iOTContext;
+            _logger = logger;
         }
-        public void GetVideo(string? fileName, string rtspUrl, string contentRoot, string timeOut)
+        public async Task GetVideo(string? fileName, string rtspUrl, string contentRoot, string timeOut, CancellationToken stoppingToken)
         {
-            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 5 -rtsp_transport tcp -timeout {timeOut} -r 25 -i {rtspUrl} -c:v h264_nvenc -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -an -hide_banner";
+            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -c:v h264_nvenc -an -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
 
-            Process process = new();
-            process.StartInfo.FileName = fileName;
-            process.StartInfo.Arguments = cmdLine;
+            //Process process = new();
+            //process.StartInfo.FileName = fileName;
+            //process.StartInfo.Arguments = cmdLine;
 
-            process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            //process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-            process.StartInfo.CreateNoWindow = true;
-            process.StartInfo.UseShellExecute = false;
+            //process.StartInfo.CreateNoWindow = true;
+            //process.StartInfo.UseShellExecute = false;
 
-            process.Start();
-            //using var ps = PowerShell.Create();
-            //ps.AddScript(cmdLine);
-            //ps.Invoke();
+            //process.Start();
+            await RunFFmpegProcess(cmdLine, contentRoot, stoppingToken);
         }
 
 
@@ -146,9 +147,6 @@ namespace MetaData.Services
             await RunProcessAsync(CMD, cmdLine);
 
         }
-
-
-
         public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime? beginDate, DateTime? endDate, double anhTrenGiay, string contentRoot)
         {
             string[]? files = null;
@@ -176,17 +174,6 @@ namespace MetaData.Services
             }
 
         }
-
-        //public async Task CropImage(string sourcePath, string outputPath, int x, int y, int width, int height)
-        //{
-        //    using (Image<Rgba32> image = SixLabors.ImageSharp.Image.Load<Rgba32>(sourcePath))
-        //    {
-        //        image.Mutate(i => i
-        //            .Crop(new Rectangle(x, y, width, height)));
-        //        await using var output = File.Create(outputPath);
-        //        await image.SaveAsync(outputPath);
-        //    }
-        //}
         public async Task CropImage(string sourcePath, string outputPath, int? x, int? y, int? width, int? height)
         {
             string cmdLine = "";
@@ -293,5 +280,53 @@ namespace MetaData.Services
             return tcs.Task;
         }
 
+        private Task RunFFmpegProcess(string cmdLine, string contentRoot, CancellationToken stoppingToken)
+        {
+            return Task.Run(() =>
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    Arguments = cmdLine,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (var process = new Process())
+                {
+                    process.StartInfo = startInfo;
+                    process.Start();
+
+                    process.OutputDataReceived += (sender, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            _logger.LogInformation($"[Camera {contentRoot}] {e.Data}");
+                        }
+                    };
+                    process.ErrorDataReceived += (sender, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            //if (e.Data.Contains("Connection timed out") || e.Data.Contains("Network is unreachable") || e.Data.Contains("Immediate exit requested") || e.Data.Contains("Starting connection attempt"))
+                            //{
+                            //    _logger.LogWarning($"[Camera {contentRoot}] Network error detected, attempting to reconnect...");
+                            //}
+                            _logger.LogError($"[Camera {contentRoot}] ERROR: {e.Data}");
+                        }
+                    };
+
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+
+                    process.WaitForExit();
+
+                    _logger.LogInformation($"FFmpeg process for camera {contentRoot} exited with code {process.ExitCode}");
+
+                }
+            }, stoppingToken);
+        }
     }
 }

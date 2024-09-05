@@ -81,13 +81,13 @@ namespace WorkerVideoCameraService.Services
                                 DuongDanFile = Path.Combine(camId.DuongDan, fileName);
 
                                 //Lưu video
-                                _workVideo.GetVideo(ffmpeg, cam.RtspUrl, DuongDanFile, TimeOut);
+                               await _workVideo.GetVideo(ffmpeg, cam.RtspUrl, DuongDanFile, TimeOut, stoppingToken);
                             }
                         }
                     }
 
                 }
-                await Task.Delay(5000, stoppingToken);
+                //await Task.Delay(5000, stoppingToken);
             }
 
 
