@@ -56,7 +56,7 @@ namespace WorkerVideoCameraService.Services
             CameraData = CameraData.getInstance();
             if (CameraData.Cameras.Count == 0)
             {
-                CameraData.Cameras = _iOTService.GetCameras().Where(x=>x.BusinessId == TypeVideo).ToList();
+                CameraData.Cameras = _iOTService.GetCameras().ToList();
             }
         }
 
@@ -64,8 +64,10 @@ namespace WorkerVideoCameraService.Services
         {
             if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0)
             {
+                
                 if (CameraData.Cameras.Count > 0)
                 {
+                    CameraData.Cameras = CameraData.Cameras.Where(x => x.BusinessId == TypeVideo).ToList();
                     Task[] tasks = new Task[CameraData.Cameras.Count];
                     for (int i = 0; i < CameraData.Cameras.Count; i++)
                     {
