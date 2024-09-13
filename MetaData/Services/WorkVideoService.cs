@@ -26,7 +26,7 @@ namespace MetaData.Services
         }
         public async Task GetVideo(string? fileName, string rtspUrl, string contentRoot, string timeOut, CancellationToken stoppingToken)
         {
-            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -c:v h264_nvenc -an -vf scale_cuda=640:480 -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
+            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 15 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -c:v h264_nvenc -an -vf scale_cuda=640:480 -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
 
             await RunFFmpegProcess(cmdLine, contentRoot, stoppingToken);
         }
