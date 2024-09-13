@@ -69,6 +69,8 @@ namespace WorkerVideoCameraService.Services
                     var tasks = new List<Task>();
                     foreach (var cam in CameraData.Cameras)
                     {
+                        await Task.Delay(160);
+                        
                         tasks.Add(Task.Run(async () =>
                         {
                             while (!stoppingToken.IsCancellationRequested)

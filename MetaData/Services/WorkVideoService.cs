@@ -1,7 +1,5 @@
 ﻿using MetaData.Context;
 using MetaData.Models;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,7 +9,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
-using SixLabors.ImageSharp.Processing;
 using Microsoft.Extensions.Logging;
 
 namespace MetaData.Services
@@ -29,18 +26,8 @@ namespace MetaData.Services
         }
         public async Task GetVideo(string? fileName, string rtspUrl, string contentRoot, string timeOut, CancellationToken stoppingToken)
         {
-            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -c:v h264_nvenc -an -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
+            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 5 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -c:v h264_nvenc -an -vf scale_cuda=640:480 -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
 
-            //Process process = new();
-            //process.StartInfo.FileName = fileName;
-            //process.StartInfo.Arguments = cmdLine;
-
-            //process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-
-            //process.StartInfo.CreateNoWindow = true;
-            //process.StartInfo.UseShellExecute = false;
-
-            //process.Start();
             await RunFFmpegProcess(cmdLine, contentRoot, stoppingToken);
         }
 
