@@ -36,6 +36,7 @@ namespace WorkerVideoCameraService.Services
         public static string? DuongDanFile = string.Empty;
         public static string TimeOut = string.Empty;
         public int TimeVideo = 0;
+        public int TimeProcess = 0;
         public readonly DateTime timeRun = DateTime.Now;
         public long? ThuMucLay = null;
         public bool RunOne = false;
@@ -55,6 +56,7 @@ namespace WorkerVideoCameraService.Services
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoDelete"] ?? "0");
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
             TimeVideo = int.Parse(_configuration["TimeVideo"] ?? "5000");
+            TimeProcess = int.Parse(_configuration["TimeProcess"] ?? "50");
 
             CameraData = CameraData.getInstance();
             if (CameraData.Cameras.Count == 0)
