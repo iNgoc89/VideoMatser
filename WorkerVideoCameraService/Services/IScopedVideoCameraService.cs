@@ -64,7 +64,7 @@ namespace WorkerVideoCameraService.Services
 
         public async Task RunApp(CancellationToken stoppingToken)
         {
-            if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0)
+            if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0 && TimeVideo > 0)
             {
                 if (CameraData.Cameras.Count > 0)
                 {
@@ -98,7 +98,7 @@ namespace WorkerVideoCameraService.Services
                         var dateNow2 = DateTime.Now;
                         TimeSpan timeSpan = dateNow2 - dateNow1;
 
-                        await Task.Delay(15000 - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
+                        await Task.Delay(TimeVideo - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
 
                     }
                     //await Task.WhenAll(tasks);
