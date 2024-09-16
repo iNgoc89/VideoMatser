@@ -109,7 +109,7 @@ namespace WorkerVideoCameraService.Services
                             }
                         }
 
-                        int delay = TimeVideo - (int)timeSpan.TotalMicroseconds - 20;
+                        int delay = TimeVideo - (int)timeSpan.TotalMilliseconds - 20;
                         if (delay < 0)
                         {
                             delay = 0;
