@@ -102,21 +102,22 @@ namespace WorkerVideoCameraService.Services
                         var dateNow2 = DateTime.Now;
                         TimeSpan timeSpan = dateNow2 - dateNow1;
 
-                        if (!RunOne)
-                        {
-                            RunOne = true;
-                            if (TimeVideo < (2 * timeSpan.TotalSeconds))
-                            {
-                                TimeVideo = 2 * (int)timeSpan.TotalSeconds;
-                            }
-                        }
+                        //if (RunOne == false)
+                        //{
+                        //    RunOne = true;
+                        //    if (TimeVideo < (2 * timeSpan.TotalSeconds))
+                        //    {
+                        //        TimeVideo = 2 * (int)timeSpan.TotalSeconds;
+                        //    }
+                        //}
 
-                        int delay = TimeVideo - (int)timeSpan.TotalMilliseconds - 20;
-                        if (delay < 0)
-                        {
-                            delay = 0;
-                        }
-                        await Task.Delay(delay, stoppingToken);
+                        //int delay = TimeVideo - (int)timeSpan.TotalMilliseconds - 20;
+                        //if (delay < 0)
+                        //{
+                        //    delay = 0;
+                        //}
+
+                        await Task.Delay(15000 - (1000 * timeSpan.Seconds) - timeSpan.Microseconds - 20, stoppingToken);
 
 
                     }
