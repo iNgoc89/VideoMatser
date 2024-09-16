@@ -69,7 +69,7 @@ namespace WorkerVideoCameraService.Services
                 if (CameraData.Cameras.Count > 0)
                 {
                     var timeVideo = TimeVideo / 1000;
-                    var timePlay = TimeVideo;
+                 
                     var tasks = new List<Task>();
                     while (!stoppingToken.IsCancellationRequested)
                     {
@@ -99,7 +99,7 @@ namespace WorkerVideoCameraService.Services
                         var dateNow2 = DateTime.Now;
                         TimeSpan timeSpan = dateNow2 - dateNow1;
 
-                        await Task.Delay(timePlay - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
+                        await Task.Delay(5000 - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
 
                     }
                     //await Task.WhenAll(tasks);
