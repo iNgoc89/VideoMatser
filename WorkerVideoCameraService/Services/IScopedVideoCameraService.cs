@@ -98,7 +98,7 @@ namespace WorkerVideoCameraService.Services
                         var dateNow2 = DateTime.Now;
                         TimeSpan timeSpan = dateNow2 - dateNow1;
 
-                        await Task.Delay(TimeVideo - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
+                        await Task.Delay(15000 - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
 
                     }
                     //await Task.WhenAll(tasks);
