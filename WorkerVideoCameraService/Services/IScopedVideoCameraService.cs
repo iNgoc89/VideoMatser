@@ -53,7 +53,7 @@ namespace WorkerVideoCameraService.Services
             TypeVideo = int.Parse(_configuration["TypeCamera:TypeVideo"] ?? "0");
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoDelete"] ?? "0");
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
-            TimeVideo = int.Parse(_configuration["TimeVideo:Millisecond"] ?? "15000");
+            TimeVideo = int.Parse(_configuration["TimeVideo"] ?? "15000");
 
             CameraData = CameraData.getInstance();
             if (CameraData.Cameras.Count == 0)
