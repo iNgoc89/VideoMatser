@@ -38,6 +38,7 @@ namespace WorkerVideoCameraService.Services
         public int TimeVideo = 0;
         public readonly DateTime timeRun = DateTime.Now;
         public long? ThuMucLay = null;
+        public bool RunOne = false;
 
         CameraData CameraData;
 
@@ -53,7 +54,7 @@ namespace WorkerVideoCameraService.Services
             TypeVideo = int.Parse(_configuration["TypeCamera:TypeVideo"] ?? "0");
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoDelete"] ?? "0");
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
-            TimeVideo = int.Parse(_configuration["TimeVideo"] ?? "15000");
+            TimeVideo = int.Parse(_configuration["TimeVideo"] ?? "5000");
 
             CameraData = CameraData.getInstance();
             if (CameraData.Cameras.Count == 0)
@@ -99,7 +100,22 @@ namespace WorkerVideoCameraService.Services
                         var dateNow2 = DateTime.Now;
                         TimeSpan timeSpan = dateNow2 - dateNow1;
 
-                        await Task.Delay(5000 - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
+                        if (!RunOne)
+                        {
+                            RunOne = true;
+                            if (TimeVideo < (2 * timeSpan.TotalSeconds))
+                            {
+                                TimeVideo = 2 * (int)timeSpan.TotalSeconds;
+                            }
+                        }
+
+                        int delay = TimeVideo - (int)timeSpan.TotalMicroseconds - 20;
+                        if (delay < 0)
+                        {
+                            delay = 0;
+                        }
+                        await Task.Delay(delay, stoppingToken);
+
 
                     }
                     //await Task.WhenAll(tasks);
