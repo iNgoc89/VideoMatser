@@ -24,9 +24,10 @@ namespace MetaData.Services
             _iOTContext = iOTContext;
             _logger = logger;
         }
-        public async Task GetVideo(string? fileName, string rtspUrl, string contentRoot, string timeOut, CancellationToken stoppingToken)
+        public async Task GetVideo(string? timeVideo, string? fileName, string rtspUrl, string contentRoot, string timeOut, CancellationToken stoppingToken)
         {
-            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t 15 -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -c:v h264_nvenc -an -vf scale_cuda=640:480 -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
+            string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t {timeVideo} -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -c:v h264_nvenc -an -vf scale_cuda=640:480 -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
+           //string cmdLine = $@" -t {timeVideo} -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -an -vf scale=640:480 -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
 
             await RunFFmpegProcess(cmdLine, contentRoot, stoppingToken);
         }

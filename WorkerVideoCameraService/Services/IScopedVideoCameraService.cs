@@ -35,6 +35,7 @@ namespace WorkerVideoCameraService.Services
         public static string? ffmpeg = string.Empty;
         public static string? DuongDanFile = string.Empty;
         public static string TimeOut = string.Empty;
+        public int TimeVideo = 0;
         public readonly DateTime timeRun = DateTime.Now;
         public long? ThuMucLay = null;
 
@@ -52,6 +53,7 @@ namespace WorkerVideoCameraService.Services
             TypeVideo = int.Parse(_configuration["TypeCamera:TypeVideo"] ?? "0");
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoDelete"] ?? "0");
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
+            TimeVideo = int.Parse(_configuration["TimeVideo:Millisecond"] ?? "15000");
 
             CameraData = CameraData.getInstance();
             if (CameraData.Cameras.Count == 0)
@@ -66,16 +68,15 @@ namespace WorkerVideoCameraService.Services
             {
                 if (CameraData.Cameras.Count > 0)
                 {
+                    var timeVideo = TimeVideo / 1000;
                     var tasks = new List<Task>();
-                    foreach (var cam in CameraData.Cameras)
+                    while (!stoppingToken.IsCancellationRequested)
                     {
-                        await Task.Delay(160);
-                        
-                        tasks.Add(Task.Run(async () =>
+                        var dateNow1 = DateTime.Now; 
+                        foreach (var cam in CameraData.Cameras)
                         {
-                            while (!stoppingToken.IsCancellationRequested)
+                            tasks.Add(Task.Run(async () =>
                             {
-                            
                                 long? ThuMucWSID = 0;
                                 string ThuMucDuongDan = string.Empty;
                                 var thuMuc = _xmhtService.TaoThuMuc(null, ThuMucLay, cam.CameraId.ToString(), ref ThuMucWSID, ref ThuMucDuongDan);
@@ -85,17 +86,25 @@ namespace WorkerVideoCameraService.Services
                                 if (camId != null && thuMuc > 0)
                                 {
                                     DuongDanFile = Path.Combine(camId.DuongDan, fileName);
-
+                                  
                                     //Lưu video
-                                    await _workVideo.GetVideo(ffmpeg, cam.RtspUrl, DuongDanFile, TimeOut, stoppingToken);
+                                    await _workVideo.GetVideo(timeVideo.ToString(),ffmpeg, cam.RtspUrl, DuongDanFile, TimeOut, stoppingToken);
                                 }
-                            }
-                        }, stoppingToken));
-                      
+
+                            }, stoppingToken));
+
+                            await Task.Delay(50);
+                        }
+                        var dateNow2 = DateTime.Now;
+                        TimeSpan timeSpan = dateNow2 - dateNow1;
+
+                        await Task.Delay(TimeVideo - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
+
                     }
-                    await Task.WhenAll(tasks);
+                    //await Task.WhenAll(tasks);
+                 
                 }
-                //await Task.Delay(5000, stoppingToken);
+               
             }
 
 
