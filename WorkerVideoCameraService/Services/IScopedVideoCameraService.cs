@@ -67,7 +67,7 @@ namespace WorkerVideoCameraService.Services
 
         public async Task RunApp(CancellationToken stoppingToken)
         {
-            if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0 && TimeVideo > 0)
+            if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0 && TimeVideo > 0 && TimeProcess > 0)
             {
                 if (CameraData.Cameras.Count > 0)
                 {
@@ -97,7 +97,7 @@ namespace WorkerVideoCameraService.Services
 
                             }, stoppingToken));
 
-                            await Task.Delay(50);
+                            await Task.Delay(TimeProcess);
                         }
                         var dateNow2 = DateTime.Now;
                         TimeSpan timeSpan = dateNow2 - dateNow1;
@@ -117,7 +117,7 @@ namespace WorkerVideoCameraService.Services
                         //    delay = 0;
                         //}
 
-                        await Task.Delay(10000 - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
+                        await Task.Delay(TimeVideo - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
 
 
                     }
