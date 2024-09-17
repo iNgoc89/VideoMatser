@@ -2,6 +2,7 @@
 using MetaData.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,5 +27,6 @@ namespace MetaData.Data
         }
 
         public List<CameraModel> Cameras = new();
+        public List<Process> ffmpegProcesses = new List<Process>();
     }
 }

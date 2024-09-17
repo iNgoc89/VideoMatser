@@ -117,7 +117,7 @@ namespace WorkerVideoCameraService.Services
                         //    delay = 0;
                         //}
 
-                        await Task.Delay(15000 - (1000 * timeSpan.Seconds) - timeSpan.Microseconds - 20, stoppingToken);
+                        await Task.Delay(10000 - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
 
 
                     }

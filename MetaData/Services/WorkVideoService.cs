@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 using Microsoft.Extensions.Logging;
+using MetaData.Data;
 
 namespace MetaData.Services
 {
@@ -19,10 +20,13 @@ namespace MetaData.Services
         public string txtCmdConcat = string.Empty;
         public string CMD = "CMD.exe";
         private readonly ILogger<WorkVideoService> _logger;
+
+        CameraData CameraData;
         public WorkVideoService(IOTContext iOTContext, ILogger<WorkVideoService> logger)
         {
             _iOTContext = iOTContext;
             _logger = logger;
+            CameraData = CameraData.getInstance();
         }
         public async Task GetVideo(string? timeVideo, string? fileName, string rtspUrl, string contentRoot, string timeOut, CancellationToken stoppingToken)
         {
@@ -270,7 +274,7 @@ namespace MetaData.Services
 
         private Task RunFFmpegProcess(string cmdLine, string contentRoot, CancellationToken stoppingToken)
         {
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
                 var startInfo = new ProcessStartInfo
                 {
@@ -285,34 +289,37 @@ namespace MetaData.Services
                 using (var process = new Process())
                 {
                     process.StartInfo = startInfo;
+                    // Lưu trữ tiến trình vào danh sách
+                    CameraData.ffmpegProcesses.Add(process);
                     process.Start();
 
-                    process.OutputDataReceived += (sender, e) =>
-                    {
-                        if (!string.IsNullOrEmpty(e.Data))
-                        {
-                            _logger.LogInformation($"[Camera {contentRoot}] {e.Data}");
-                        }
-                    };
-                    process.ErrorDataReceived += (sender, e) =>
-                    {
-                        if (!string.IsNullOrEmpty(e.Data))
-                        {
-                            //if (e.Data.Contains("Connection timed out") || e.Data.Contains("Network is unreachable") || e.Data.Contains("Immediate exit requested") || e.Data.Contains("Starting connection attempt"))
-                            //{
-                            //    _logger.LogWarning($"[Camera {contentRoot}] Network error detected, attempting to reconnect...");
-                            //}
-                            _logger.LogError($"[Camera {contentRoot}] ERROR: {e.Data}");
-                        }
-                    };
+                    //process.OutputDataReceived += (sender, e) =>
+                    //{
+                    //    if (!string.IsNullOrEmpty(e.Data))
+                    //    {
+                    //        _logger.LogInformation($"[Camera {contentRoot}] {e.Data}");
+                    //    }
+                    //};
+                    //process.ErrorDataReceived += (sender, e) =>
+                    //{
+                    //    if (!string.IsNullOrEmpty(e.Data))
+                    //    {
+                    //        //if (e.Data.Contains("Connection timed out") || e.Data.Contains("Network is unreachable") || e.Data.Contains("Immediate exit requested") || e.Data.Contains("Starting connection attempt"))
+                    //        //{
+                    //        //    _logger.LogWarning($"[Camera {contentRoot}] Network error detected, attempting to reconnect...");
+                    //        //}
+                    //        _logger.LogError($"[Camera {contentRoot}] ERROR: {e.Data}");
+                    //    }
+                    //};
 
-                    process.BeginOutputReadLine();
-                    process.BeginErrorReadLine();
+                    //process.BeginOutputReadLine();
+                    //process.BeginErrorReadLine();
 
-                    process.WaitForExit();
+                   await process.WaitForExitAsync(stoppingToken);
 
                     _logger.LogInformation($"FFmpeg process for camera {contentRoot} exited with code {process.ExitCode}");
-
+                    // Xóa tiến trình khỏi danh sách sau khi hoàn thành
+                    CameraData.ffmpegProcesses.Remove(process);
                 }
             }, stoppingToken);
         }
