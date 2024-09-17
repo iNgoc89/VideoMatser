@@ -2,6 +2,7 @@
 using MetaData.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -15,9 +16,12 @@ namespace MetaData.Services
     {
         public readonly string? _connectionString;
         IDbConnection Connection { get { return new SqlConnection(_connectionString); } }
-        public XmhtService(IConfiguration configuration)
+
+        private readonly ILogger<XmhtService> _logger;
+        public XmhtService(IConfiguration configuration, ILogger<XmhtService> logger)
         {
             _connectionString = configuration["ConnectionStrings:XMHTConnection"];
+            _logger = logger;
         }
         public  long TaoThuMuc(Guid? SessionID, long? ThuMucChaID, string TenThuMuc, ref long? ThuMucID, ref string DuongDan)
         {
@@ -83,9 +87,9 @@ namespace MetaData.Services
 
                     return ret.FirstOrDefault() ?? null;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
                 }
              
             }
@@ -117,9 +121,9 @@ namespace MetaData.Services
 
                     return Id;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
                 }
         
             }
@@ -150,9 +154,9 @@ namespace MetaData.Services
 
                     return Id;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
                 }
             
             }

@@ -2,6 +2,7 @@
 using MetaData.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Data;
 
 
@@ -11,9 +12,12 @@ namespace MetaData.Services
     {
         public readonly string? _connectionString;
         IDbConnection Connection { get { return new SqlConnection(_connectionString); } }
-        public IOTService(IConfiguration configuration)
+
+        private readonly ILogger<IOTService> _logger;
+        public IOTService(IConfiguration configuration, ILogger<IOTService> logger)
         {
             _connectionString = configuration["ConnectionStrings:IOTConnection"];
+            _logger = logger;
         }
         public int P_ConcatVideoCamera_Insert(Guid guid, int cameraId, DateTime beginDate, DateTime endDate)
         {
@@ -40,14 +44,11 @@ namespace MetaData.Services
 
                     return Id;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
                 }
-                finally
-                {
-                    if (connection.State == ConnectionState.Open) connection.Close();
-                }
+            
             }
             return 0;
         }
@@ -71,14 +72,11 @@ namespace MetaData.Services
                      commandType: CommandType.StoredProcedure);
 
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
                 }
-                finally
-                {
-                    if (connection.State == ConnectionState.Open) connection.Close();
-                }
+          
             }
 
         }
@@ -101,14 +99,11 @@ namespace MetaData.Services
                      commandType: CommandType.StoredProcedure);
 
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    //_logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
                 }
-                finally
-                {
-                    if (connection.State == ConnectionState.Open) connection.Close();
-                }
+         
             }
 
         }
@@ -129,12 +124,9 @@ namespace MetaData.Services
                 }
                 catch (Exception ex)
                 {
-                    var mess = ex.Message;
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
                 }
-                finally
-                {
-                    if (connection.State == ConnectionState.Open) connection.Close();
-                }
+           
             }
 
             return cameras;
