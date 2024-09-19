@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using MetaData.Context;
 using MetaData.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -130,6 +131,54 @@ namespace MetaData.Services
             }
 
             return cameras;
+        }
+
+        public List<ConcatVideoCamera> CheckGID(Guid? gid)
+        {
+            List<ConcatVideoCamera> concatVideos = new List<ConcatVideoCamera>();
+            using (var connection = Connection)
+            {
+                connection.Open();
+                string sql = $"select * from cmrs.CheckGID('{gid}')";
+                try
+                {
+                    concatVideos = connection.Query<ConcatVideoCamera>(sql: sql,
+                     commandType: CommandType.Text).ToList();
+
+                    return concatVideos;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                }
+
+            }
+
+            return concatVideos;
+        }
+
+        public List<ConcatVideoCamera> CheckVideo(DateTime beginDate, DateTime endDate, int camId)
+        {
+            List<ConcatVideoCamera> concatVideos = new List<ConcatVideoCamera>();
+            using (var connection = Connection)
+            {
+                connection.Open();
+                string sql = $"select * from cmrs.CheckVideo('{beginDate}', '{endDate}', '{camId}')";
+                try
+                {
+                    concatVideos = connection.Query<ConcatVideoCamera>(sql: sql,
+                     commandType: CommandType.Text).ToList();
+
+                    return concatVideos;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                }
+
+            }
+
+            return concatVideos;
         }
     }
 }

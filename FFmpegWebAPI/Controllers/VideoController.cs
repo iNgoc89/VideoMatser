@@ -129,11 +129,12 @@ namespace FFmpegWebAPI.Controllers
             }
 
             //Kiểm tra GID đã tồn tại hay chưa
-            List<ConcatVideoCamera> gid = _iOTContext.ConcatVideoCameras.Where(x => x.Gid == videoConcatRequest.GID).ToList();
+
+            var gid = _iOTService.CheckGID(videoConcatRequest.GID);
+
             if (gid.Count > 0)
             {
                 var kqGID = gid.First();
-
                 videoReturl.Id = kqGID.Id;
                 videoReturl.UrlPath = kqGID.VideoUri;
                 videoReturl.ErrMsg = "Đã tồn tại GID!";
@@ -142,12 +143,13 @@ namespace FFmpegWebAPI.Controllers
             }
 
             //Kiểm tra video tương tự trên hệ thống hay chưa
-            List<ConcatVideoCamera> data = _iOTContext.ConcatVideoCameras.Where(x => x.BeginDate <= videoConcatRequest.BeginDate.AddSeconds(5) && x.BeginDate >= videoConcatRequest.BeginDate.AddSeconds(-5) && x.EndDate <= videoConcatRequest.EndDate.AddSeconds(5) && x.EndDate >= videoConcatRequest.EndDate.AddSeconds(-5) && x.CameraId == videoConcatRequest.CameraId).ToList();
+        
+            var data = _iOTService.CheckVideo(videoConcatRequest.BeginDate, videoConcatRequest.EndDate, videoConcatRequest.CameraId);
             if (data.Count > 0)
             {
-                var video = data.First();
-                videoReturl.Id = video.Id;
-                videoReturl.UrlPath = video.VideoUri;
+                var kqData = data.First();
+                videoReturl.Id = kqData.Id;
+                videoReturl.UrlPath = kqData.VideoUri;
                 videoReturl.ErrMsg = "Đã tồn tại video trên hệ thống!";
 
                 return new JsonResult(videoReturl);
@@ -277,7 +279,7 @@ namespace FFmpegWebAPI.Controllers
             {
                 if (imageRequest.SaveImage == true)
                 {
-                    return await  _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ImageVirtual);
+                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ImageVirtual);
                 }
                 else
                 {
@@ -319,7 +321,7 @@ namespace FFmpegWebAPI.Controllers
             try
             {
 
-                return await _workImageService.WorkImageFromVideoRequest(imageRequest, ThuMucVideoDelete , imageRequest.CameraId.ToString(), ThuMucImageDelete);
+                return await _workImageService.WorkImageFromVideoRequest(imageRequest, ThuMucVideoDelete, imageRequest.CameraId.ToString(), ThuMucImageDelete);
 
             }
             catch (Exception ex)
