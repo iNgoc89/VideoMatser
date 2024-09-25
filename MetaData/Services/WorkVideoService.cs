@@ -27,7 +27,7 @@ namespace MetaData.Services
         //Gom các process bằng JOB Object
         private IntPtr _jobHandle;
         private const int JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000;
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         public static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string lpName);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
@@ -45,7 +45,7 @@ namespace MetaData.Services
             CameraData = CameraData.getInstance();
 
             // Create the Job Object
-            _jobHandle = CreateJobObject(IntPtr.Zero, null);
+            _jobHandle = CreateJobObject(IntPtr.Zero, "VideoService");
             if (_jobHandle == IntPtr.Zero)
             {
                 throw new InvalidOperationException("Không thể tạo Job Object");
@@ -347,15 +347,11 @@ namespace MetaData.Services
 
                     // Lưu trữ tiến trình vào danh sách
                     CameraData.ffmpegProcesses.Add(process);
-              
-                    process.Start();
-                    // Kiểm tra process có đang chạy không
-                    if (!process.HasExited && process.Handle != IntPtr.Zero)
-                    {
-                        // Gán process vào Job Object
-                        AssignProcessToJobObject(_jobHandle, process.Handle);
-                    }
 
+                    process.Start();
+
+                    // Gán process vào Job Object
+                    AssignProcessToJobObject(_jobHandle, process.Handle);
 
                     await process.WaitForExitAsync(stoppingToken);
 
@@ -385,15 +381,11 @@ namespace MetaData.Services
 
                     // Lưu trữ tiến trình vào danh sách
                     CameraData.ffmpegProcesses.Add(process);
-               
-                    process.Start();
-                    // Kiểm tra process có đang chạy không
-                    if (!process.HasExited && process.Handle != IntPtr.Zero)
-                    {
-                        // Gán process vào Job Object
-                        AssignProcessToJobObject(_jobHandle, process.Handle);
-                    }
 
+                    process.Start();
+
+                    // Gán process vào Job Object
+                    AssignProcessToJobObject(_jobHandle, process.Handle);
 
                     await process.WaitForExitAsync();
 
