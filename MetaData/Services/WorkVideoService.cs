@@ -27,10 +27,14 @@ namespace MetaData.Services
         //Gom các process bằng JOB Object
         private IntPtr _jobHandle;
         private const int JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000;
+        const int JOB_OBJECT_LIMIT_BREAKAWAY_OK = 0x800;
+        const int JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK = 0x1000;
+
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         public static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string lpName);
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        [DllImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetInformationJobObject(IntPtr hJob, int JobObjectInfoClass, IntPtr lpJobObjectInfo, uint cbJobObjectInfoLength);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
@@ -38,6 +42,22 @@ namespace MetaData.Services
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         public static extern bool TerminateJobObject(IntPtr hJob, uint uExitCode);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct JOBOBJECT_BASIC_UI_RESTRICTIONS
+        {
+            public uint UIRestrictionsClass;
+        }
+
+        public enum JobObjectInfoType
+        {
+            JobObjectBasicLimitInformation = 2,
+            JobObjectExtendedLimitInformation = 9,
+            JobObjectBasicUIRestrictions = 4,
+        }
+
+        public const int JOB_OBJECT_LIMIT_CHILD_PROCESS_RESTRICTIONS = 0x00001000;
+
         public WorkVideoService(IOTContext iOTContext, ILogger<WorkVideoService> logger)
         {
             _iOTContext = iOTContext;
@@ -54,7 +74,7 @@ namespace MetaData.Services
             // Set the job object to terminate all child processes when closed
             var info = new JOBOBJECT_BASIC_LIMIT_INFORMATION
             {
-                LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+                LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK
             };
 
             var extendedInfo = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION
@@ -72,6 +92,24 @@ namespace MetaData.Services
             }
 
             Marshal.FreeHGlobal(extendedInfoPtr);
+
+            // **Cấu hình bổ sung cho Job Object:**
+            // Thiết lập hạn chế giao diện người dùng cho Job Object
+            var uiRestrictions = new JOBOBJECT_BASIC_UI_RESTRICTIONS
+            {
+                UIRestrictionsClass = 0 // Bạn có thể thiết lập các cờ hạn chế UI ở đây, ví dụ: 0x00000001 cho JOB_OBJECT_UILIMIT_DESKTOP.
+            };
+
+            var uiRestrictionsLength = Marshal.SizeOf(typeof(JOBOBJECT_BASIC_UI_RESTRICTIONS));
+            var uiRestrictionsPtr = Marshal.AllocHGlobal(uiRestrictionsLength);
+            Marshal.StructureToPtr(uiRestrictions, uiRestrictionsPtr, false);
+
+            if (!SetInformationJobObject(_jobHandle, (int)JobObjectInfoType.JobObjectBasicUIRestrictions, uiRestrictionsPtr, (uint)uiRestrictionsLength))
+            {
+                throw new InvalidOperationException("Không thể thiết lập UI Restrictions cho Job Object");
+            }
+
+            Marshal.FreeHGlobal(uiRestrictionsPtr);
         }
 
         // Cấu trúc để thiết lập thông tin giới hạn cho Job Object
@@ -335,10 +373,11 @@ namespace MetaData.Services
                 {
                     FileName = "ffmpeg",
                     Arguments = cmdLine,
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = false
                 };
 
                 using (var process = new Process())
