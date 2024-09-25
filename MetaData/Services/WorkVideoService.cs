@@ -347,10 +347,15 @@ namespace MetaData.Services
 
                     // Lưu trữ tiến trình vào danh sách
                     CameraData.ffmpegProcesses.Add(process);
-                    //  Gán process vào Job Object
-                    AssignProcessToJobObject(_jobHandle, process.Handle);
-
+              
                     process.Start();
+                    // Kiểm tra process có đang chạy không
+                    if (!process.HasExited && process.Handle != IntPtr.Zero)
+                    {
+                        // Gán process vào Job Object
+                        AssignProcessToJobObject(_jobHandle, process.Handle);
+                    }
+
 
                     await process.WaitForExitAsync(stoppingToken);
 
@@ -380,10 +385,15 @@ namespace MetaData.Services
 
                     // Lưu trữ tiến trình vào danh sách
                     CameraData.ffmpegProcesses.Add(process);
-                    //  Gán process vào Job Object
-                    AssignProcessToJobObject(_jobHandle, process.Handle);
-
+               
                     process.Start();
+                    // Kiểm tra process có đang chạy không
+                    if (!process.HasExited && process.Handle != IntPtr.Zero)
+                    {
+                        // Gán process vào Job Object
+                        AssignProcessToJobObject(_jobHandle, process.Handle);
+                    }
+
 
                     await process.WaitForExitAsync();
 
