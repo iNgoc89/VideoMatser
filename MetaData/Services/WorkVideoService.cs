@@ -408,10 +408,11 @@ namespace MetaData.Services
                 {
                     FileName = CMD,
                     Arguments = cmdLine,
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = false
                 };
 
                 using (var process = new Process())
