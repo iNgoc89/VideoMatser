@@ -6,11 +6,14 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Microsoft.PowerShell.Commands;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +23,7 @@ namespace WorkerVideoCameraService.Services
     internal interface IScopedVideoCameraService
     {
         Task RunApp(CancellationToken stoppingToken);
+        Task StopApp(CancellationToken stoppingToken);
     }
     internal class ScopedProcessingService : IScopedVideoCameraService
     {
@@ -42,7 +46,7 @@ namespace WorkerVideoCameraService.Services
         public bool RunOne = false;
 
         CameraData CameraData;
-
+        private readonly List<Task> _tasks = new List<Task>();
         public ScopedProcessingService(IOTContext iOTContext, IOTService iOTService, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
         {
             _iOTContext = iOTContext;
@@ -61,7 +65,7 @@ namespace WorkerVideoCameraService.Services
             CameraData = CameraData.getInstance();
             if (CameraData.Cameras.Count == 0)
             {
-                CameraData.Cameras = _iOTService.GetCameras().Where(x=>x.BusinessId == TypeVideo).ToList();
+                CameraData.Cameras = _iOTService.GetCameras().Where(x => x.BusinessId == TypeVideo).ToList();
             }
         }
 
@@ -72,14 +76,14 @@ namespace WorkerVideoCameraService.Services
                 if (CameraData.Cameras.Count > 0)
                 {
                     var timeVideo = TimeVideo / 1000;
-                 
-                    var tasks = new List<Task>();
+
+
                     while (!stoppingToken.IsCancellationRequested)
                     {
-                        var dateNow1 = DateTime.Now; 
+                        var dateNow1 = DateTime.Now;
                         foreach (var cam in CameraData.Cameras)
                         {
-                            tasks.Add(Task.Run(async () =>
+                            _tasks.Add(Task.Run(async () =>
                             {
                                 long? ThuMucWSID = 0;
                                 string ThuMucDuongDan = string.Empty;
@@ -90,9 +94,9 @@ namespace WorkerVideoCameraService.Services
                                 if (camId != null && thuMuc > 0)
                                 {
                                     DuongDanFile = Path.Combine(camId.DuongDan, fileName);
-                                  
+
                                     //Lưu video
-                                    await _workVideo.GetVideo(timeVideo.ToString(),ffmpeg, cam.RtspUrl, DuongDanFile, TimeOut, stoppingToken);
+                                    await _workVideo.GetVideo(timeVideo.ToString(), ffmpeg, cam.RtspUrl, DuongDanFile, TimeOut, stoppingToken);
                                 }
 
                             }, stoppingToken));
@@ -122,12 +126,31 @@ namespace WorkerVideoCameraService.Services
 
                     }
                     //await Task.WhenAll(tasks);
-                 
+
                 }
-               
+
+            }
+        }
+
+        public async Task StopApp(CancellationToken stoppingToken)
+        {
+            // Dừng tất cả các task hiện tại
+            if (_tasks.Count > 0)
+            {
+                await Task.WhenAll(_tasks);
             }
 
+            //Hủy tất cả tiến trình FFmpeg còn đang chạy
+            foreach (var process in CameraData.ffmpegProcesses)
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill();
+                }
+            }
 
+            // Dừng tất cả các process thuộc Job Object
+            _workVideo.StopProcess();
         }
     }
 }

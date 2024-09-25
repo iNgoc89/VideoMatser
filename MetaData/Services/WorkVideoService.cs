@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 using Microsoft.Extensions.Logging;
 using MetaData.Data;
+using System.Runtime.InteropServices;
 
 namespace MetaData.Services
 {
@@ -22,18 +23,100 @@ namespace MetaData.Services
         private readonly ILogger<WorkVideoService> _logger;
 
         CameraData CameraData;
+
+        //Gom các process bằng JOB Object
+        private IntPtr _jobHandle;
+        private const int JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000;
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        public static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string lpName);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        public static extern bool SetInformationJobObject(IntPtr hJob, int JobObjectInfoClass, IntPtr lpJobObjectInfo, uint cbJobObjectInfoLength);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        public static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr process);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        public static extern bool TerminateJobObject(IntPtr hJob, uint uExitCode);
         public WorkVideoService(IOTContext iOTContext, ILogger<WorkVideoService> logger)
         {
             _iOTContext = iOTContext;
             _logger = logger;
             CameraData = CameraData.getInstance();
+
+            // Create the Job Object
+            _jobHandle = CreateJobObject(IntPtr.Zero, null);
+            if (_jobHandle == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Không thể tạo Job Object");
+            }
+
+            // Set the job object to terminate all child processes when closed
+            var info = new JOBOBJECT_BASIC_LIMIT_INFORMATION
+            {
+                LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+            };
+
+            var extendedInfo = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+            {
+                BasicLimitInformation = info
+            };
+
+            var length = Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+            var extendedInfoPtr = Marshal.AllocHGlobal(length);
+            Marshal.StructureToPtr(extendedInfo, extendedInfoPtr, false);
+
+            if (!SetInformationJobObject(_jobHandle, 9, extendedInfoPtr, (uint)length))
+            {
+                throw new InvalidOperationException("Không thể thiết lập thông tin Job Object");
+            }
+
+            Marshal.FreeHGlobal(extendedInfoPtr);
+        }
+
+        // Cấu trúc để thiết lập thông tin giới hạn cho Job Object
+        [StructLayout(LayoutKind.Sequential)]
+        public struct JOBOBJECT_BASIC_LIMIT_INFORMATION
+        {
+            public long PerProcessUserTimeLimit;
+            public long PerJobUserTimeLimit;
+            public int LimitFlags;
+            public UIntPtr MinimumWorkingSetSize;
+            public UIntPtr MaximumWorkingSetSize;
+            public int ActiveProcessLimit;
+            public long Affinity;
+            public int PriorityClass;
+            public int SchedulingClass;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct IO_COUNTERS
+        {
+            public ulong ReadOperationCount;
+            public ulong WriteOperationCount;
+            public ulong OtherOperationCount;
+            public ulong ReadTransferCount;
+            public ulong WriteTransferCount;
+            public ulong OtherTransferCount;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+        {
+            public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
+            public IO_COUNTERS IoInfo;
+            public UIntPtr ProcessMemoryLimit;
+            public UIntPtr JobMemoryLimit;
+            public UIntPtr PeakProcessMemoryUsed;
+            public UIntPtr PeakJobMemoryUsed;
         }
         public async Task GetVideo(string? timeVideo, string? fileName, string rtspUrl, string contentRoot, string timeOut, CancellationToken stoppingToken)
         {
             string cmdLine = $@"-hwaccel cuda -hwaccel_output_format cuda -t {timeVideo} -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -c:v h264_nvenc -an -vf scale_cuda=640:480 -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
-           //string cmdLine = $@" -t {timeVideo} -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -an -vf scale=640:480 -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
+            //string cmdLine = $@" -t {timeVideo} -rtsp_transport tcp -timeout {timeOut} -i {rtspUrl} -an -vf scale=640:480 -r 25 -maxrate 1M -bufsize 2M {contentRoot} -y -loglevel quiet -hide_banner";
 
-            await RunFFmpegProcess(cmdLine, contentRoot, stoppingToken);
+            await RunFFmpegProcess(cmdLine, stoppingToken);
+
         }
 
 
@@ -44,7 +127,7 @@ namespace MetaData.Services
             {
                 string cmdLine = $@"/C ({txtFileConcat}) > {tenFileConcatTxt}";
 
-                await RunProcessAsync(CMD, cmdLine);
+                await RunCMDProcess(cmdLine);
 
             }
 
@@ -58,7 +141,7 @@ namespace MetaData.Services
             {
                 string cmdLine = $@"/C ffmpeg -f concat -safe 0 -i {txtFileConcat} -c copy {contentRoot} -timeout {timeOut}";
 
-                await RunProcessAsync(CMD, cmdLine);
+                await RunCMDProcess(cmdLine);
             }
 
         }
@@ -136,7 +219,7 @@ namespace MetaData.Services
 
             cmdLine = $@"/C ffmpeg -rtsp_transport tcp -xerror -timeout {timeOut} -i {rtspUrl} -vf scale=640:480 -r 25  -maxrate 1M -bufsize 2M -frames:v 1 {contentRoot} -y -loglevel quiet -an -hide_banner & exit /b";
 
-            await RunProcessAsync(CMD, cmdLine);
+            await RunCMDProcess(cmdLine);
 
         }
         public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime? beginDate, DateTime? endDate, double anhTrenGiay, string contentRoot)
@@ -161,7 +244,7 @@ namespace MetaData.Services
 
                     cmdLine = $@"/C ffmpeg -i {file} -vf fps=1/{anhTrenGiay} {contentRoot} -y -loglevel quiet -an -hide_banner";
 
-                    await RunProcessAsync(CMD, cmdLine);
+                    await RunCMDProcess(cmdLine);
                 }
             }
 
@@ -171,7 +254,7 @@ namespace MetaData.Services
             string cmdLine = "";
 
             cmdLine = $@"/C ffmpeg -i {sourcePath} -vf crop={width}:{height}:{x}:{y} {outputPath} -y -loglevel quiet -an -hide_banner";
-            await RunProcessAsync(CMD, cmdLine);
+            await RunCMDProcess(cmdLine);
 
         }
         public async Task<List<ImageReturn>> FindFile(string path, string nameFile, int? x, int? y, int? width, int? height)
@@ -197,7 +280,7 @@ namespace MetaData.Services
             {
                 if (x >= 0 && y >= 0 && width > 0 && height > 0)
                 {
-                   await CropImage(file, file,x, y, width, height); 
+                    await CropImage(file, file, x, y, width, height);
                 }
                 var base64Image = await ImageToBase64(file);
 
@@ -243,36 +326,8 @@ namespace MetaData.Services
             }
             return "";
         }
-        public static Task<int> RunProcessAsync(string? fileName, string argument)
-        {
-            var tcs = new TaskCompletionSource<int>();
 
-            var process = new Process
-            {
-                StartInfo =
-                {
-                    FileName = fileName,
-                    Arguments = argument,
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                },
-
-                EnableRaisingEvents = true
-            };
-
-            process.Exited += (sender, args) =>
-            {
-                tcs.SetResult(process.ExitCode);
-                process.Dispose();
-            };
-
-            process.Start();
-
-            return tcs.Task;
-        }
-
-        private Task RunFFmpegProcess(string cmdLine, string contentRoot, CancellationToken stoppingToken)
+        private Task RunFFmpegProcess(string cmdLine, CancellationToken stoppingToken)
         {
             return Task.Run(async () =>
             {
@@ -289,39 +344,63 @@ namespace MetaData.Services
                 using (var process = new Process())
                 {
                     process.StartInfo = startInfo;
+
                     // Lưu trữ tiến trình vào danh sách
                     CameraData.ffmpegProcesses.Add(process);
+                    //  Gán process vào Job Object
+                    AssignProcessToJobObject(_jobHandle, process.Handle);
+
                     process.Start();
 
-                    //process.OutputDataReceived += (sender, e) =>
-                    //{
-                    //    if (!string.IsNullOrEmpty(e.Data))
-                    //    {
-                    //        _logger.LogInformation($"[Camera {contentRoot}] {e.Data}");
-                    //    }
-                    //};
-                    //process.ErrorDataReceived += (sender, e) =>
-                    //{
-                    //    if (!string.IsNullOrEmpty(e.Data))
-                    //    {
-                    //        //if (e.Data.Contains("Connection timed out") || e.Data.Contains("Network is unreachable") || e.Data.Contains("Immediate exit requested") || e.Data.Contains("Starting connection attempt"))
-                    //        //{
-                    //        //    _logger.LogWarning($"[Camera {contentRoot}] Network error detected, attempting to reconnect...");
-                    //        //}
-                    //        _logger.LogError($"[Camera {contentRoot}] ERROR: {e.Data}");
-                    //    }
-                    //};
+                    await process.WaitForExitAsync(stoppingToken);
 
-                    //process.BeginOutputReadLine();
-                    //process.BeginErrorReadLine();
-
-                   await process.WaitForExitAsync(stoppingToken);
-
-                    _logger.LogInformation($"FFmpeg process for camera {contentRoot} exited with code {process.ExitCode}");
                     // Xóa tiến trình khỏi danh sách sau khi hoàn thành
                     CameraData.ffmpegProcesses.Remove(process);
                 }
             }, stoppingToken);
+        }
+
+        private Task RunCMDProcess(string cmdLine)
+        {
+            return Task.Run(async () =>
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = CMD,
+                    Arguments = cmdLine,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (var process = new Process())
+                {
+                    process.StartInfo = startInfo;
+
+                    // Lưu trữ tiến trình vào danh sách
+                    CameraData.ffmpegProcesses.Add(process);
+                    //  Gán process vào Job Object
+                    AssignProcessToJobObject(_jobHandle, process.Handle);
+
+                    process.Start();
+
+                    await process.WaitForExitAsync();
+
+                    // Xóa tiến trình khỏi danh sách sau khi hoàn thành
+                    CameraData.ffmpegProcesses.Remove(process);
+                }
+            });
+        }
+
+        public void StopProcess()
+        {
+            // Dừng tất cả các process thuộc Job Object
+            if (_jobHandle != IntPtr.Zero)
+            {
+                TerminateJobObject(_jobHandle, 0);
+                _jobHandle = IntPtr.Zero;
+            }
         }
     }
 }

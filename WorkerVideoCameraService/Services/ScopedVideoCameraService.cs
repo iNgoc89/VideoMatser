@@ -50,17 +50,41 @@ namespace WorkerVideoCameraService.Services
 
         public override async Task StopAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Service is stopping.");
-
-            // Hủy tất cả tiến trình FFmpeg còn đang chạy
-            foreach (var process in CameraData.ffmpegProcesses)
+            using (var scope = _services.CreateScope())
             {
-                if (!process.HasExited)
+                try
                 {
-                    _logger.LogInformation($"Killing FFmpeg process for {process.StartInfo.Arguments}");
-                    process.Kill();
+                    var scopedProcessingService =
+                    scope.ServiceProvider
+                     .GetRequiredService<IScopedVideoCameraService>();
+
+                    await scopedProcessingService.StopApp(stoppingToken);
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "{Message}", ex.Message);
+                }
+
             }
+            // Hủy tất cả tiến trình FFmpeg còn đang chạy
+            _logger.LogInformation("Service is stopping.");
+            //try
+            //{
+            //    foreach (var process in CameraData.ffmpegProcesses)
+            //    {
+            //        if (!process.HasExited)
+            //        {
+            //            _logger.LogInformation($"Killing FFmpeg process for {process.StartInfo.Arguments}");
+            //            process.Kill();
+            //        }
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.LogError($"Lỗi {ex.Message}");
+            //}
+
+           
 
             await base.StopAsync(stoppingToken);
         }
