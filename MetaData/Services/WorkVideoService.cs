@@ -74,12 +74,15 @@ namespace MetaData.Services
             // Set the job object to terminate all child processes when closed
             var info = new JOBOBJECT_BASIC_LIMIT_INFORMATION
             {
-                LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK
+                LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_BREAKAWAY_OK
             };
 
             var extendedInfo = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION
             {
-                BasicLimitInformation = info
+                BasicLimitInformation = new JOBOBJECT_BASIC_LIMIT_INFORMATION
+                {
+                    LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_BREAKAWAY_OK
+                }
             };
 
             var length = Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
@@ -392,6 +395,12 @@ namespace MetaData.Services
                     // Gán process vào Job Object
                     AssignProcessToJobObject(_jobHandle, process.Handle);
 
+                    if (!AssignProcessToJobObject(_jobHandle, process.Handle))
+                    {
+                        int error = Marshal.GetLastWin32Error();
+                        _logger.LogError($"Failed to assign process to job object. Error code: {error}");
+                    }
+
                     await process.WaitForExitAsync(stoppingToken);
 
                     // Xóa tiến trình khỏi danh sách sau khi hoàn thành
@@ -426,6 +435,12 @@ namespace MetaData.Services
 
                     // Gán process vào Job Object
                     AssignProcessToJobObject(_jobHandle, process.Handle);
+
+                    if (!AssignProcessToJobObject(_jobHandle, process.Handle))
+                    {
+                        int error = Marshal.GetLastWin32Error();
+                        _logger.LogError($"Failed to assign process to job object. Error code: {error}");
+                    }
 
                     await process.WaitForExitAsync();
 
