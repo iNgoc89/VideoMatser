@@ -105,17 +105,17 @@ namespace WorkerVideoCameraService.Services
                         }
                         var dateNow2 = DateTime.Now;
 
-                        TimeSpan timeSpan = new();
-                        if (dateNow2 > dateNow1)
-                        {
-                            timeSpan = dateNow2 - dateNow1;
-                        }
-                        else
-                        {
-                            timeSpan = new TimeSpan(100);
-                        }
+                        //TimeSpan timeSpan = new();
+                        //if (dateNow2 > dateNow1)
+                        //{
+                        //    timeSpan = dateNow2 - dateNow1;
+                        //}
+                        //else
+                        //{
+                        //    timeSpan = new TimeSpan(100);
+                        //}
 
-                        //TimeSpan timeSpan = dateNow2 - dateNow1;
+                        TimeSpan timeSpan = dateNow2 - dateNow1;
 
                         //if (RunOne == false)
                         //{
