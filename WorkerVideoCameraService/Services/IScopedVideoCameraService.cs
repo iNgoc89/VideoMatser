@@ -104,7 +104,18 @@ namespace WorkerVideoCameraService.Services
                             await Task.Delay(TimeProcess);
                         }
                         var dateNow2 = DateTime.Now;
-                        TimeSpan timeSpan = dateNow2 - dateNow1;
+
+                        TimeSpan timeSpan = new();
+                        if (dateNow2 > dateNow1)
+                        {
+                            timeSpan = dateNow2 - dateNow1;
+                        }
+                        else
+                        {
+                            timeSpan = new TimeSpan(100);
+                        }
+
+                        //TimeSpan timeSpan = dateNow2 - dateNow1;
 
                         //if (RunOne == false)
                         //{
@@ -114,15 +125,16 @@ namespace WorkerVideoCameraService.Services
                         //        TimeVideo = 2 * (int)timeSpan.TotalSeconds;
                         //    }
                         //}
+                      
 
-                        //int delay = TimeVideo - (int)timeSpan.TotalMilliseconds - 20;
-                        //if (delay < 0)
-                        //{
-                        //    delay = 0;
-                        //}
+                        int delay = TimeVideo - (int)timeSpan.TotalMilliseconds - 20;
+                        if (delay < 0)
+                        {
+                            delay = 0;
+                        }
 
-                        await Task.Delay(TimeVideo - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
-
+                       // await Task.Delay(TimeVideo - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
+                       await Task.Delay(delay,stoppingToken);
 
                     }
                     //await Task.WhenAll(tasks);

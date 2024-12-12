@@ -1,6 +1,7 @@
 ﻿using MetaData.Context;
 using MetaData.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Web.Services.Description;
 
 internal class Program
 {
@@ -24,6 +25,7 @@ internal class Program
         builder.Services.AddScoped<WorkVideoService>();
         builder.Services.AddScoped<XmhtService>();
         builder.Services.AddScoped<WorkImageService>();
+
 
         var app = builder.Build();
 

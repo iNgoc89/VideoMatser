@@ -432,6 +432,7 @@ namespace MetaData.Services
                     CameraData.ffmpegProcesses.Add(process);
 
                     process.Start();
+                   
 
                     // Gán process vào Job Object
                     AssignProcessToJobObject(_jobHandle, process.Handle);
