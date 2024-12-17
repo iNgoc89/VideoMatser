@@ -128,13 +128,13 @@ namespace WorkerVideoCameraService.Services
                       
 
                         int delay = TimeVideo - (int)timeSpan.TotalMilliseconds - 20;
-                        if (delay < 0)
-                        {
-                            delay = 0;
-                        }
+                        //if (delay < 0)
+                        //{
+                        //    delay = 0;
+                        //}
 
-                       // await Task.Delay(TimeVideo - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
-                       await Task.Delay(delay,stoppingToken);
+                        await Task.Delay(TimeVideo - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);
+                      // await Task.Delay(delay,stoppingToken);
 
                     }
                     //await Task.WhenAll(tasks);
