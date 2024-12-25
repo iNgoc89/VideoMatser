@@ -250,7 +250,7 @@ namespace MetaData.Services
                             {
                                 // DateTime f = new DateTime(ticks);
                                 if (beginDate.AddMilliseconds(-timeVideo).Ticks <= ticks 
-                                    && ticks <= endDate.AddMilliseconds(timeVideo).Ticks)
+                                    && ticks < endDate.Ticks)
                                 {
                                     listFile.Add(file);
                                 }
