@@ -12,7 +12,7 @@ namespace MetaData.Models
         public int CameraId { get; set; }
         public bool SaveImage { get; set; }
 
-        public bool Resize { get; set; } 
+        public bool Resize { get; set; } = true;
         public int? X { get; set; }
         public int? Y { get; set; }
         public int? Width { get; set; }
