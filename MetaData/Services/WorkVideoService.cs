@@ -161,9 +161,9 @@ namespace MetaData.Services
         }
 
 
-        public async Task<string> CreateConcatTxt(int camId, string ThuMucVideo, DateTime beginDate, DateTime endDate, string tenFileConcatTxt)
+        public async Task<string> CreateConcatTxt(int camId, string ThuMucVideo, DateTime beginDate, DateTime endDate, string tenFileConcatTxt, int timeVideo)
         {
-            var txtFileConcat = SeachFile(camId, ThuMucVideo, beginDate, endDate);
+            var txtFileConcat = SeachFile(camId, ThuMucVideo, beginDate, endDate, timeVideo);
             if (!string.IsNullOrEmpty(txtFileConcat))
             {
                 string cmdLine = $@"/C ({txtFileConcat}) > {tenFileConcatTxt}";
@@ -175,9 +175,9 @@ namespace MetaData.Services
             return tenFileConcatTxt;
         }
 
-        public async Task ConcatVideo(int camId, string ThuMucDuongDan, string TenFileConcatTxt, DateTime beginDate, DateTime endDate, string contentRoot, string timeOut)
+        public async Task ConcatVideo(int camId, string ThuMucDuongDan, string TenFileConcatTxt, DateTime beginDate, DateTime endDate, string contentRoot, string timeOut, int timeVideo)
         {
-            var txtFileConcat = await CreateConcatTxt(camId, ThuMucDuongDan, beginDate, endDate, TenFileConcatTxt);
+            var txtFileConcat = await CreateConcatTxt(camId, ThuMucDuongDan, beginDate, endDate, TenFileConcatTxt, timeVideo);
             if (!string.IsNullOrEmpty(txtFileConcat))
             {
                 string cmdLine = $@"/C ffmpeg -f concat -safe 0 -i {txtFileConcat} -c copy {contentRoot} -timeout {timeOut}";
@@ -187,13 +187,15 @@ namespace MetaData.Services
 
         }
 
-        public string SeachFile(int camId, string ThuMucVideo, DateTime beginDate, DateTime endDate)
+        public string SeachFile(int camId, string ThuMucVideo, DateTime beginDate, DateTime endDate, int timeVideo)
         {
             string cmdLine = string.Empty;
-            string[]? files = CheckFile(camId, ThuMucVideo, beginDate, endDate);
+            string[]? files = CheckFile(camId, ThuMucVideo, beginDate, endDate, timeVideo);
             if (files?.Length > 0)
             {
-                foreach (var file in files)
+                var sortedFiles = files.OrderBy(x => Path.GetFileName(x)).ToArray();
+
+                foreach (var file in sortedFiles)
                 {
                     if (file.Length > 0)
                     {
@@ -218,7 +220,7 @@ namespace MetaData.Services
             }
         }
 
-        public string[]? CheckFile(int camId, string ThuMucLay, DateTime beginDate, DateTime endDate)
+        public string[]? CheckFile(int camId, string ThuMucLay, DateTime beginDate, DateTime endDate, int timeVideo)
         {
             var camIdstring = $@"{camId}_*";
             string cmdLine = string.Empty;
@@ -233,12 +235,36 @@ namespace MetaData.Services
                 {
                     if (file.Length > 0)
                     {
-                        DateTime creation = File.GetCreationTime(file);
-
-                        if (creation >= beginDate && creation <= endDate)
+                        //DateTime creation = File.GetCreationTime(file);
+                        string fileName = Path.GetFileName(file);
+                        // Lấy tên file không bao gồm phần mở rộng
+                        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+                        // Tách phần thời gian từ tên file
+                        string[] parts = fileNameWithoutExtension.Split('_');
+                        if (parts.Length == 2)
                         {
-                            listFile.Add(file);
+                            string ticksString = parts[1]; // "638707154825520542"
+
+                            // Chuyển đổi từ ticks thành DateTime
+                            if (long.TryParse(ticksString, out long ticks))
+                            {
+                                // DateTime f = new DateTime(ticks);
+                                if (beginDate.AddMilliseconds(-timeVideo).Ticks <= ticks 
+                                    && ticks <= endDate.AddMilliseconds(timeVideo).Ticks)
+                                {
+                                    listFile.Add(file);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Không thể chuyển đổi ticks thành DateTime.");
+                            }
                         }
+                        else
+                        {
+                            Console.WriteLine("Tên file không đúng định dạng.");
+                        }
+
 
                     }
                     stream.Close();
@@ -251,29 +277,36 @@ namespace MetaData.Services
                 filesReturl = listFile.ToArray();
             }
 
+
             return filesReturl;
         }
 
-        public async Task GetImage(string rtspUrl, string contentRoot, string timeOut)
+        public async Task GetImage(string rtspUrl, string contentRoot, string timeOut, bool reSize = true)
         {
             string cmdLine = "";
-
-            cmdLine = $@"/C ffmpeg -rtsp_transport tcp -xerror -timeout {timeOut} -i {rtspUrl} -vf scale=640:480 -r 25  -maxrate 1M -bufsize 2M -frames:v 1 {contentRoot} -y -loglevel quiet -an -hide_banner & exit /b";
+            if (reSize == true)
+            {
+                cmdLine = $@"/C ffmpeg -rtsp_transport tcp -xerror -timeout {timeOut} -i {rtspUrl} -vf scale=640:480 -r 25  -maxrate 1M -bufsize 2M -frames:v 1 {contentRoot} -y -loglevel quiet -an -hide_banner & exit /b";
+            }
+            else
+            {
+                cmdLine = $@"/C ffmpeg -rtsp_transport tcp -xerror -timeout {timeOut} -i {rtspUrl} -r 25  -maxrate 1M -bufsize 2M -frames:v 1 {contentRoot} -y -loglevel quiet -an -hide_banner & exit /b";
+            }
 
             await RunCMDProcess(cmdLine);
 
         }
-        public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime? beginDate, DateTime? endDate, double anhTrenGiay, string contentRoot)
+        public async Task GetImageFromVideo(int camId, string ThuMucVideo, DateTime? beginDate, DateTime? endDate, double anhTrenGiay, string contentRoot, int timeVideo)
         {
             string[]? files = null;
             string cmdLine = "";
             if (beginDate.HasValue && endDate.HasValue)
             {
-                files = CheckFile(camId, ThuMucVideo, beginDate.Value, endDate.Value);
+                files = CheckFile(camId, ThuMucVideo, beginDate.Value, endDate.Value, timeVideo);
             }
             else
             {
-                files = CheckFile(camId, ThuMucVideo, DateTime.Now.AddSeconds(-5), DateTime.Now);
+                files = CheckFile(camId, ThuMucVideo, DateTime.Now.AddSeconds(-5), DateTime.Now, timeVideo);
             }
 
             if (files?.Length > 0)

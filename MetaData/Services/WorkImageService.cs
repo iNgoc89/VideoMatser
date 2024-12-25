@@ -73,7 +73,7 @@ namespace MetaData.Services
                 {
                     var camera = cameras.First();
 
-                   await _workVideoService.GetImage(camera.RtspUrl, urlImageSave, timeOut);
+                   await _workVideoService.GetImage(camera.RtspUrl, urlImageSave, timeOut, imageRequest.Resize);
 
                     //Kiểm tra file đã ghi hay chưa
                     if (System.IO.File.Exists(urlImageSave))
@@ -116,7 +116,7 @@ namespace MetaData.Services
             return new JsonResult(imageReturl);
         }
 
-        public async Task<JsonResult> WorkImageFromVideoRequest(ImageFromVideoRequest imageRequest, long? thuMucCha, string tenThuMucCon, long? thuMucLuuAnh)
+        public async Task<JsonResult> WorkImageFromVideoRequest(ImageFromVideoRequest imageRequest, long? thuMucCha, string tenThuMucCon, long? thuMucLuuAnh, int timeVideo)
         {
             List<ImageReturn> imageReturls = new List<ImageReturn>();
 
@@ -136,7 +136,7 @@ namespace MetaData.Services
                 var urlImageSave = Path.Combine(urlLuuAnh.DuongDan, fileName);
 
                 //Tạo ảnh
-                await _workVideoService.GetImageFromVideo(imageRequest.CameraId, urlLuu.DuongDan, imageRequest.BeginDate, imageRequest.EndDate, imageRequest.AnhTrenGiay, urlImageSave);
+                await _workVideoService.GetImageFromVideo(imageRequest.CameraId, urlLuu.DuongDan, imageRequest.BeginDate, imageRequest.EndDate, imageRequest.AnhTrenGiay, urlImageSave, timeVideo);
 
                 //Lấy danh sách ảnh
                 var images = await _workVideoService.FindFile(urlLuuAnh.DuongDan, imageRequest.GID.ToString(), imageRequest.X, imageRequest.Y, imageRequest.Width, imageRequest.Height);

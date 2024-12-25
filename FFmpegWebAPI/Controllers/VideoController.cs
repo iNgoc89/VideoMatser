@@ -35,7 +35,9 @@ namespace FFmpegWebAPI.Controllers
         public static string? ffmpeg = string.Empty;
         public int TypeVideo = 0;
         public int TypeImage = 0;
+        public int TimeVideo = 0;
         CameraData CameraData;
+
         public VideoController(IOTContext iOTContext, IOTService iOTService, WorkVideoService workVideoService, XmhtService xmhtService, WorkImageService workImageService, IConfiguration configuration)
         {
             _iOTContext = iOTContext;
@@ -57,6 +59,8 @@ namespace FFmpegWebAPI.Controllers
             VideoVirtual = _configuration["ThuMucNghiepVu:VideoVirtual"] ?? "";
             ImageVirtual = _configuration["ThuMucNghiepVu:ImageVirtual"] ?? "";
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
+
+            TimeVideo = int.Parse(_configuration["TimeVideo"] ?? "20000");
 
             ffmpeg = _configuration["FFmpeg:Url"];
 
@@ -178,7 +182,7 @@ namespace FFmpegWebAPI.Controllers
                 var urlLuuLay = _xmhtService.P_ThuMuc_LayTheoID(null, idThuMucLuuLay);
                 if (urlLuu != null && urlTxt != null && idThuMucLuuLay > 0 && urlLuuLay != null)
                 {
-                    var checkFile = _workVideoService.CheckFile(videoConcatRequest.CameraId, urlLuuLay.DuongDan, videoConcatRequest.BeginDate, videoConcatRequest.EndDate);
+                    var checkFile = _workVideoService.CheckFile(videoConcatRequest.CameraId, urlLuuLay.DuongDan, videoConcatRequest.BeginDate, videoConcatRequest.EndDate, TimeVideo);
                     if (checkFile?.Length > 0)
                     {
                         kq = _iOTService.P_ConcatVideoCamera_Insert(videoConcatRequest.GID, videoConcatRequest.CameraId, videoConcatRequest.BeginDate, videoConcatRequest.EndDate);
@@ -194,7 +198,7 @@ namespace FFmpegWebAPI.Controllers
                                 var DuongDanFileTXT = Path.Combine(urlTxt.DuongDan, fileNameTxt);
 
                                 //Concat Video
-                                await _workVideoService.ConcatVideo(videoConcatRequest.CameraId, urlLuuLay.DuongDan, DuongDanFileTXT, videoConcatRequest.BeginDate, videoConcatRequest.EndDate, DuongDanFileLuu, TimeOut);
+                                await _workVideoService.ConcatVideo(videoConcatRequest.CameraId, urlLuuLay.DuongDan, DuongDanFileTXT, videoConcatRequest.BeginDate, videoConcatRequest.EndDate, DuongDanFileLuu, TimeOut, TimeVideo);
 
                                 //Check file tồn tại
                                 if (System.IO.File.Exists(DuongDanFileLuu))
@@ -321,7 +325,7 @@ namespace FFmpegWebAPI.Controllers
             try
             {
 
-                return await _workImageService.WorkImageFromVideoRequest(imageRequest, ThuMucVideoDelete, imageRequest.CameraId.ToString(), ThuMucImageDelete);
+                return await _workImageService.WorkImageFromVideoRequest(imageRequest, ThuMucVideoDelete, imageRequest.CameraId.ToString(), ThuMucImageDelete, TimeVideo);
 
             }
             catch (Exception ex)
