@@ -59,7 +59,7 @@ namespace WorkerVideoCameraService.Services
             TypeVideo = int.Parse(_configuration["TypeCamera:TypeVideo"] ?? "0");
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoDelete"] ?? "0");
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
-            TimeVideo = int.Parse(_configuration["TimeVideo"] ?? "5000");
+            TimeVideo = int.Parse(_configuration["TimeVideo"] ?? "20000");
             TimeProcess = int.Parse(_configuration["TimeProcess"] ?? "50");
 
             CameraData = CameraData.getInstance();
@@ -130,7 +130,7 @@ namespace WorkerVideoCameraService.Services
                         int delay = TimeVideo - (int)timeSpan.TotalMilliseconds - 20;
                         if (delay < 0)
                         {
-                            delay = 0;
+                            delay = TimeVideo;
                         }
 
                        // await Task.Delay(TimeVideo - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);

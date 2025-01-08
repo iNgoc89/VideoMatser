@@ -258,43 +258,63 @@ namespace FFmpegWebAPI.Controllers
             if (ThuMucImageDelete == 0 || ThuMucImageSave == 0)
             {
                 imageReturl.ErrMsg = "Id thư mục Image sai, xem lại appsetting!";
+                //LogRequestToFile(imageRequest, false, imageReturl);
                 return new JsonResult(imageReturl);
             }
 
             if (TypeImage == 0)
             {
                 imageReturl.ErrMsg = "Type Image sai, xem lại appsetting!";
+                //LogRequestToFile(imageRequest, false, imageReturl);
                 return new JsonResult(imageReturl);
             }
 
             if (TimeOut == "0")
             {
                 imageReturl.ErrMsg = "Timeout sai, xem lại appsetting!";
+                //LogRequestToFile(imageRequest, false, imageReturl);
                 return new JsonResult(imageReturl);
             }
 
             if (string.IsNullOrEmpty(ImageVirtual))
             {
                 imageReturl.ErrMsg = "Thư mục ảo hóa sai, xem lại appsetting!";
+                //LogRequestToFile(imageRequest, false, imageReturl);
                 return new JsonResult(imageReturl);
             }
 
             try
             {
+                JsonResult result;
+                ImageReturn? imageResult;
                 if (imageRequest.SaveImage == true)
                 {
-                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ImageVirtual);
+                    result = await _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ImageVirtual);
                 }
                 else
                 {
-                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageDelete, imageRequest.CameraId.ToString(), TypeImage, TimeOut, ImageVirtual);
+                    result = await _workImageService.WorkImageRequest(imageRequest, ThuMucImageDelete, imageRequest.CameraId.ToString(), TypeImage, TimeOut, ImageVirtual);
                 }
+                // Lấy dữ liệu từ JsonResult
+                imageResult = result.Value as ImageReturn;
 
+                // Ghi log thông tin
+                //if (imageResult != null)
+                //{
+                //    LogRequestToFile(imageRequest, true, imageResult);
+                //}
+                //else
+                //{
+                //    LogRequestToFile(imageRequest, false, new ImageReturn { ErrMsg = "Null response from WorkImageRequest" });
+                //}
+
+                return result;
 
             }
             catch (Exception ex)
             {
                 imageReturl.ErrMsg = ex.Message;
+                //LogRequestToFile(imageRequest, false, imageReturl);
                 return new JsonResult(imageReturl);
             }
         }
@@ -332,6 +352,85 @@ namespace FFmpegWebAPI.Controllers
             {
                 imageReturl.ErrMsg = ex.Message;
                 return new JsonResult(imageReturl);
+            }
+        }
+
+        // Phương thức ghi log ra file
+        private void LogRequestToFile(ImageGetRequest imageRequest, bool isSuccess, ImageReturn imageReturn)
+        {
+            string logFilePath = @"E:\XMHT\Apps\LogImageRequest.txt";
+            int logRetentionDays = 5; // Số ngày giữ log
+                                      // Xóa log cũ nếu cần
+            DeleteOldLogs(logFilePath, logRetentionDays);
+            // Dữ liệu log
+            var logData = new
+            {
+                Timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                ClientIP = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                CameraId = imageRequest.CameraId,
+                SaveImage = imageRequest.SaveImage,
+                IsSuccess = isSuccess,
+                Base64 = imageReturn.Base64,
+                ImageUrl = imageReturn.ImageUrl,
+                ErrMsg = imageReturn.ErrMsg
+            };
+
+            string logEntry = $"[{logData.Timestamp}] ClientIP: {logData.ClientIP}, CameraId: {logData.CameraId}, " +
+                              $"SaveImage: {logData.SaveImage}, IsSuccess: {logData.IsSuccess}, " +
+                              $"Base64: {(string.IsNullOrEmpty(logData.Base64) ? "null" : "[BASE64 data]")}, " +
+                              $"ImageUrl: {logData.ImageUrl}, ErrMsg: {logData.ErrMsg}\n";
+
+            // Ghi log ra file
+            try
+            {
+                using (var stream = new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.Read))
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.WriteLine(logEntry);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to write log: {ex.Message}");
+            }
+        }
+
+        // Phương thức xóa log cũ
+        private void DeleteOldLogs(string logFilePath, int retentionDays)
+        {
+            try
+            {
+                if (System.IO.File.Exists(logFilePath))
+                {
+                    // Lấy thời gian hiện tại
+                    DateTime currentDate = DateTime.UtcNow;
+
+                    // Đọc tất cả các dòng log từ file
+                    var logLines = System.IO.File.ReadAllLines(logFilePath);
+
+                    // Lọc các dòng log mới hơn retentionDays
+                    var filteredLines = logLines.Where(line =>
+                    {
+                        // Trích xuất timestamp từ log
+                        var timestampPart = line.Split(']')[0].TrimStart('[');
+
+                        if (DateTime.TryParseExact(timestampPart, "yyyy-MM-dd HH:mm:ss", null, System.Globalization.DateTimeStyles.AssumeUniversal, out DateTime logDate))
+                        {
+                            // Giữ lại log trong retentionDays
+                            return (currentDate - logDate).TotalDays <= retentionDays;
+                        }
+
+                        // Nếu không parse được timestamp, giữ lại log
+                        return true;
+                    });
+
+                    // Ghi lại các log còn giữ vào file
+                    System.IO.File.WriteAllLines(logFilePath, filteredLines);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to delete old logs: {ex.Message}");
             }
         }
     }
