@@ -59,7 +59,7 @@ namespace WorkerVideoCameraService.Services
             TypeVideo = int.Parse(_configuration["TypeCamera:TypeVideo"] ?? "0");
             ThuMucLay = long.Parse(_configuration["ThuMucNghiepVu:VideoDelete"] ?? "0");
             TimeOut = _configuration["TimeOutFFmpeg:Millisecond"] ?? "0";
-            TimeVideo = int.Parse(_configuration["TimeVideo"] ?? "5000");
+            TimeVideo = int.Parse(_configuration["TimeVideo"] ?? "20000");
             TimeProcess = int.Parse(_configuration["TimeProcess"] ?? "50");
 
             CameraData = CameraData.getInstance();
@@ -80,8 +80,10 @@ namespace WorkerVideoCameraService.Services
 
                     while (!stoppingToken.IsCancellationRequested)
                     {
+                        var cameDangChay = _iOTService.GetCamerasDangChay().ToList();
+
                         var dateNow1 = DateTime.Now;
-                        foreach (var cam in CameraData.Cameras)
+                        foreach (var cam in cameDangChay)
                         {
                             _tasks.Add(Task.Run(async () =>
                             {

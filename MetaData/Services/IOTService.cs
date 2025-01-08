@@ -133,6 +133,30 @@ namespace MetaData.Services
             return cameras;
         }
 
+        public List<CameraModel> GetCamerasDangChay()
+        {
+            List<CameraModel> cameras = new List<CameraModel>();
+            using (var connection = Connection)
+            {
+                connection.Open();
+                string sql = $"select * from cmrs.GetCameraVideo_DangChay()";
+                try
+                {
+                    cameras = connection.Query<CameraModel>(sql: sql,
+                     commandType: CommandType.Text).ToList();
+
+                    return cameras;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                }
+
+            }
+
+            return cameras;
+        }
+
         public List<ConcatVideoCamera> CheckGID(Guid? gid)
         {
             List<ConcatVideoCamera> concatVideos = new List<ConcatVideoCamera>();
