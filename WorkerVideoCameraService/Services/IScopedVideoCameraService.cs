@@ -80,8 +80,10 @@ namespace WorkerVideoCameraService.Services
 
                     while (!stoppingToken.IsCancellationRequested)
                     {
+                        var cameDangChay = _iOTService.GetCamerasDangChay().ToList();
+
                         var dateNow1 = DateTime.Now;
-                        foreach (var cam in CameraData.Cameras)
+                        foreach (var cam in cameDangChay)
                         {
                             _tasks.Add(Task.Run(async () =>
                             {
@@ -130,7 +132,7 @@ namespace WorkerVideoCameraService.Services
                         int delay = TimeVideo - (int)timeSpan.TotalMilliseconds - 20;
                         if (delay < 0)
                         {
-                            delay = TimeVideo;
+                            delay = 0;
                         }
 
                        // await Task.Delay(TimeVideo - (1000 * timeSpan.Seconds) - timeSpan.Milliseconds - 20, stoppingToken);

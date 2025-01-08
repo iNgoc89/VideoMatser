@@ -285,18 +285,18 @@ namespace FFmpegWebAPI.Controllers
 
             try
             {
-                JsonResult result;
-                ImageReturn? imageResult;
+                //JsonResult result;
+                //ImageReturn? imageResult;
                 if (imageRequest.SaveImage == true)
                 {
-                    result = await _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ImageVirtual);
+                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageSave, DateTime.Now.ToString("yyyyMM"), TypeImage, TimeOut, ImageVirtual);
                 }
                 else
                 {
-                    result = await _workImageService.WorkImageRequest(imageRequest, ThuMucImageDelete, imageRequest.CameraId.ToString(), TypeImage, TimeOut, ImageVirtual);
+                    return await _workImageService.WorkImageRequest(imageRequest, ThuMucImageDelete, imageRequest.CameraId.ToString(), TypeImage, TimeOut, ImageVirtual);
                 }
                 // Lấy dữ liệu từ JsonResult
-                imageResult = result.Value as ImageReturn;
+               // imageResult = result.Value as ImageReturn;
 
                 // Ghi log thông tin
                 //if (imageResult != null)
@@ -308,7 +308,7 @@ namespace FFmpegWebAPI.Controllers
                 //    LogRequestToFile(imageRequest, false, new ImageReturn { ErrMsg = "Null response from WorkImageRequest" });
                 //}
 
-                return result;
+                //return result;
 
             }
             catch (Exception ex)
