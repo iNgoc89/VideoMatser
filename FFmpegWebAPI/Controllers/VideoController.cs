@@ -261,6 +261,7 @@ namespace FFmpegWebAPI.Controllers
                 return new JsonResult(imageReturl);
             }
 
+
             if (TypeImage == 0)
             {
                 imageReturl.ErrMsg = "Type Image sai, xem lại appsetting!";
