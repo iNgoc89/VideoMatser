@@ -286,11 +286,11 @@ namespace MetaData.Services
             string cmdLine = "";
             if (reSize == true)
             {
-                cmdLine = $@"/C ffmpeg -rtsp_transport tcp -xerror -timeout {timeOut} -i {rtspUrl} -vf scale=640:480 -r 25  -maxrate 1M -bufsize 2M -frames:v 1 {contentRoot} -y -loglevel quiet -an -hide_banner & exit /b";
+                cmdLine = $"/C ffmpeg -rtsp_transport tcp -xerror -timeout {timeOut} -i \"{rtspUrl}\" -vf scale=640:480 -r 25  -maxrate 1M -bufsize 2M -frames:v 1 {contentRoot} -y -loglevel quiet -an -hide_banner & exit /b";
             }
             else
             {
-                cmdLine = $@"/C ffmpeg -rtsp_transport tcp -xerror -timeout {timeOut} -i {rtspUrl} -r 25  -maxrate 1M -bufsize 2M -frames:v 1 {contentRoot} -y -loglevel quiet -an -hide_banner & exit /b";
+                cmdLine = $"/C ffmpeg -rtsp_transport tcp -xerror -timeout {timeOut} -i \"{rtspUrl}\" -r 25  -maxrate 1M -bufsize 2M -frames:v 1 {contentRoot} -y -loglevel quiet -an -hide_banner & exit /b";
             }
 
             await RunCMDProcess(cmdLine);
