@@ -11,6 +11,8 @@ IHost host = Host.CreateDefaultBuilder(args)
         //service get video
         services.AddHostedService<ScopedVideoCameraService>();
         services.AddScoped<IScopedVideoCameraService, ScopedProcessingService>();
+        services.AddSingleton<WorkerHealthState>();
+        services.AddHostedService<WorkerHealthLogService>();
 
         //service delete video
         services.AddHostedService<DeleteVideoCameraService>();
@@ -28,6 +30,11 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddScoped<WorkVideoService>();
         services.AddScoped<WorkDeleteService>();
         services.AddScoped<IOTService>();
+        services.AddHealthChecks()
+            .AddCheck<DatabaseHealthCheck>("databases")
+            .AddCheck<StorageFolderHealthCheck>("storage-folders")
+            .AddCheck<FFmpegHealthCheck>("ffmpeg")
+            .AddCheck<WorkerCameraCaptureHealthCheck>("camera-capture");
 
         //add windown service
         services.AddWindowsService();

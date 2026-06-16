@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using MetaData.Context;
 using MetaData.Data;
+using MetaData.Models;
 using MetaData.Services;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Data.SqlClient;
@@ -47,13 +48,26 @@ namespace WorkerVideoCameraService.Services
 
         CameraData CameraData;
         private readonly List<Task> _tasks = new List<Task>();
-        public ScopedProcessingService(IOTContext iOTContext, IOTService iOTService, XmhtService xmhtService, IConfiguration configuration, WorkVideoService workVideo)
+        private readonly object _tasksLock = new object();
+        private readonly ILogger<ScopedProcessingService> _logger;
+        private readonly WorkerHealthState _healthState;
+
+        public ScopedProcessingService(
+            IOTContext iOTContext,
+            IOTService iOTService,
+            XmhtService xmhtService,
+            IConfiguration configuration,
+            WorkVideoService workVideo,
+            ILogger<ScopedProcessingService> logger,
+            WorkerHealthState healthState)
         {
             _iOTContext = iOTContext;
             _iOTService = iOTService;
             _xmhtService = xmhtService;
             _workVideo = workVideo;
             _configuration = configuration;
+            _logger = logger;
+            _healthState = healthState;
 
             ffmpeg = _configuration["FFmpeg:Url"];
             TypeVideo = int.Parse(_configuration["TypeCamera:TypeVideo"] ?? "0");
@@ -80,32 +94,21 @@ namespace WorkerVideoCameraService.Services
 
                     while (!stoppingToken.IsCancellationRequested)
                     {
+                        CleanupCompletedTasks();
                         var cameDangChay = _iOTService.GetCamerasDangChay().ToList();
+                        _healthState.MarkCycleStarted(GetActiveTaskCount());
 
                         var dateNow1 = DateTime.Now;
                         foreach (var cam in cameDangChay)
                         {
-                            _tasks.Add(Task.Run(async () =>
-                            {
-                                long? ThuMucWSID = 0;
-                                string ThuMucDuongDan = string.Empty;
-                                var thuMuc = _xmhtService.TaoThuMuc(null, ThuMucLay, cam.CameraId.ToString(), ref ThuMucWSID, ref ThuMucDuongDan);
+                            AddCaptureTask(Task.Run(
+                                () => CaptureVideoAsync(cam, timeVideo, stoppingToken),
+                                stoppingToken));
 
-                                var fileName = cam.CameraId.ToString() + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
-                                var camId = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
-                                if (camId != null && thuMuc > 0)
-                                {
-                                    DuongDanFile = Path.Combine(camId.DuongDan, fileName);
-
-                                    //Lưu video
-                                    await _workVideo.GetVideo(timeVideo.ToString(), ffmpeg, cam.RtspUrl, DuongDanFile, TimeOut, stoppingToken);
-                                }
-
-                            }, stoppingToken));
-
-                            await Task.Delay(TimeProcess);
+                            await Task.Delay(TimeProcess, stoppingToken);
                         }
                         var dateNow2 = DateTime.Now;
+                        CleanupCompletedTasks();
 
                         //TimeSpan timeSpan = new();
                         //if (dateNow2 > dateNow1)
@@ -146,12 +149,83 @@ namespace WorkerVideoCameraService.Services
             }
         }
 
+        private async Task CaptureVideoAsync(CameraModel cam, int timeVideo, CancellationToken stoppingToken)
+        {
+            try
+            {
+                long? ThuMucWSID = 0;
+                string ThuMucDuongDan = string.Empty;
+                var thuMuc = _xmhtService.TaoThuMuc(null, ThuMucLay, cam.CameraId.ToString(), ref ThuMucWSID, ref ThuMucDuongDan);
+
+                var fileName = cam.CameraId.ToString() + "_" + DateTime.Now.Ticks.ToString() + ".mp4";
+                var camId = _xmhtService.P_ThuMuc_LayTheoID(null, thuMuc);
+                if (camId != null && thuMuc > 0)
+                {
+                    DuongDanFile = Path.Combine(camId.DuongDan, fileName);
+
+                    //Lưu video
+                    await _workVideo.GetVideo(timeVideo.ToString(), ffmpeg, cam.RtspUrl, DuongDanFile, TimeOut, stoppingToken);
+                    _healthState.MarkCaptureCompleted();
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _healthState.MarkFailure(ex);
+                _logger.LogError(ex, "Failed to capture video for camera {CameraId}.", cam.CameraId);
+            }
+        }
+
+        private void AddCaptureTask(Task task)
+        {
+            lock (_tasksLock)
+            {
+                _tasks.Add(task);
+                _healthState.SetActiveCaptureTasks(_tasks.Count);
+            }
+        }
+
+        private void CleanupCompletedTasks()
+        {
+            lock (_tasksLock)
+            {
+                _tasks.RemoveAll(task => task.IsCompleted);
+                _healthState.SetActiveCaptureTasks(_tasks.Count);
+            }
+        }
+
+        private int GetActiveTaskCount()
+        {
+            lock (_tasksLock)
+            {
+                return _tasks.Count;
+            }
+        }
+
         public async Task StopApp(CancellationToken stoppingToken)
         {
-            // Dừng tất cả các task hiện tại
-            if (_tasks.Count > 0)
+            Task[] activeTasks;
+            lock (_tasksLock)
             {
-                await Task.WhenAll(_tasks);
+                activeTasks = _tasks.ToArray();
+            }
+
+            if (activeTasks.Length > 0)
+            {
+                try
+                {
+                    await Task.WhenAll(activeTasks);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "One or more capture tasks failed while stopping.");
+                }
             }
 
             //Hủy tất cả tiến trình FFmpeg còn đang chạy

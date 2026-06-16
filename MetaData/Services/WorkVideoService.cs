@@ -15,7 +15,7 @@ using System.Runtime.InteropServices;
 
 namespace MetaData.Services
 {
-    public class WorkVideoService
+    public class WorkVideoService : IDisposable
     {
         public IOTContext _iOTContext;
         public string txtCmdConcat = string.Empty;
@@ -30,18 +30,22 @@ namespace MetaData.Services
         const int JOB_OBJECT_LIMIT_BREAKAWAY_OK = 0x800;
         const int JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK = 0x1000;
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        public static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string lpName);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string? lpName);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetInformationJobObject(IntPtr hJob, int JobObjectInfoClass, IntPtr lpJobObjectInfo, uint cbJobObjectInfoLength);
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr process);
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern bool TerminateJobObject(IntPtr hJob, uint uExitCode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseHandle(IntPtr hObject);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct JOBOBJECT_BASIC_UI_RESTRICTIONS
@@ -64,55 +68,74 @@ namespace MetaData.Services
             _logger = logger;
             CameraData = CameraData.getInstance();
 
-            // Create the Job Object
-            _jobHandle = CreateJobObject(IntPtr.Zero, "VideoService");
+            TryCreateJobObject();
+        }
+
+        private void TryCreateJobObject()
+        {
+            var jobObjectName = $"VideoService-{Environment.ProcessId}-{Guid.NewGuid():N}";
+            _jobHandle = CreateJobObject(IntPtr.Zero, jobObjectName);
             if (_jobHandle == IntPtr.Zero)
             {
-                throw new InvalidOperationException("Không thể tạo Job Object");
+                var error = Marshal.GetLastWin32Error();
+                _logger.LogWarning("Không thể tạo Job Object. Error code: {ErrorCode}. FFmpeg vẫn chạy nhưng không được gom vào Job Object.", error);
+                return;
             }
 
+            var extendedInfoPtr = IntPtr.Zero;
+            var uiRestrictionsPtr = IntPtr.Zero;
             // Set the job object to terminate all child processes when closed
-            var info = new JOBOBJECT_BASIC_LIMIT_INFORMATION
+            try
             {
-                LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_BREAKAWAY_OK
-            };
-
-            var extendedInfo = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION
-            {
-                BasicLimitInformation = new JOBOBJECT_BASIC_LIMIT_INFORMATION
+                var extendedInfo = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION
                 {
-                    LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_BREAKAWAY_OK
+                    BasicLimitInformation = new JOBOBJECT_BASIC_LIMIT_INFORMATION
+                    {
+                        LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_BREAKAWAY_OK
+                    }
+                };
+
+                var length = Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+                extendedInfoPtr = Marshal.AllocHGlobal(length);
+                Marshal.StructureToPtr(extendedInfo, extendedInfoPtr, false);
+
+                if (!SetInformationJobObject(_jobHandle, 9, extendedInfoPtr, (uint)length))
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    _logger.LogWarning("Không thể thiết lập thông tin Job Object. Error code: {ErrorCode}. FFmpeg vẫn chạy nhưng không được gom vào Job Object.", error);
+                    CloseJobHandle();
+                    return;
                 }
-            };
 
-            var length = Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
-            var extendedInfoPtr = Marshal.AllocHGlobal(length);
-            Marshal.StructureToPtr(extendedInfo, extendedInfoPtr, false);
+                // Thiết lập hạn chế giao diện người dùng cho Job Object
+                var uiRestrictions = new JOBOBJECT_BASIC_UI_RESTRICTIONS
+                {
+                    UIRestrictionsClass = 0
+                };
 
-            if (!SetInformationJobObject(_jobHandle, 9, extendedInfoPtr, (uint)length))
-            {
-                throw new InvalidOperationException("Không thể thiết lập thông tin Job Object");
+                var uiRestrictionsLength = Marshal.SizeOf(typeof(JOBOBJECT_BASIC_UI_RESTRICTIONS));
+                uiRestrictionsPtr = Marshal.AllocHGlobal(uiRestrictionsLength);
+                Marshal.StructureToPtr(uiRestrictions, uiRestrictionsPtr, false);
+
+                if (!SetInformationJobObject(_jobHandle, (int)JobObjectInfoType.JobObjectBasicUIRestrictions, uiRestrictionsPtr, (uint)uiRestrictionsLength))
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    _logger.LogWarning("Không thể thiết lập UI Restrictions cho Job Object. Error code: {ErrorCode}. FFmpeg vẫn chạy nhưng không được gom vào Job Object.", error);
+                    CloseJobHandle();
+                }
             }
-
-            Marshal.FreeHGlobal(extendedInfoPtr);
-
-            // **Cấu hình bổ sung cho Job Object:**
-            // Thiết lập hạn chế giao diện người dùng cho Job Object
-            var uiRestrictions = new JOBOBJECT_BASIC_UI_RESTRICTIONS
+            finally
             {
-                UIRestrictionsClass = 0 // Bạn có thể thiết lập các cờ hạn chế UI ở đây, ví dụ: 0x00000001 cho JOB_OBJECT_UILIMIT_DESKTOP.
-            };
+                if (extendedInfoPtr != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(extendedInfoPtr);
+                }
 
-            var uiRestrictionsLength = Marshal.SizeOf(typeof(JOBOBJECT_BASIC_UI_RESTRICTIONS));
-            var uiRestrictionsPtr = Marshal.AllocHGlobal(uiRestrictionsLength);
-            Marshal.StructureToPtr(uiRestrictions, uiRestrictionsPtr, false);
-
-            if (!SetInformationJobObject(_jobHandle, (int)JobObjectInfoType.JobObjectBasicUIRestrictions, uiRestrictionsPtr, (uint)uiRestrictionsLength))
-            {
-                throw new InvalidOperationException("Không thể thiết lập UI Restrictions cho Job Object");
+                if (uiRestrictionsPtr != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(uiRestrictionsPtr);
+                }
             }
-
-            Marshal.FreeHGlobal(uiRestrictionsPtr);
         }
 
         // Cấu trúc để thiết lập thông tin giới hạn cho Job Object
@@ -425,14 +448,7 @@ namespace MetaData.Services
 
                     process.Start();
 
-                    // Gán process vào Job Object
-                    AssignProcessToJobObject(_jobHandle, process.Handle);
-
-                    if (!AssignProcessToJobObject(_jobHandle, process.Handle))
-                    {
-                        int error = Marshal.GetLastWin32Error();
-                        _logger.LogError($"Failed to assign process to job object. Error code: {error}");
-                    }
+                    AssignProcessToCurrentJob(process);
 
                     await process.WaitForExitAsync(stoppingToken);
 
@@ -467,14 +483,7 @@ namespace MetaData.Services
                     process.Start();
                    
 
-                    // Gán process vào Job Object
-                    AssignProcessToJobObject(_jobHandle, process.Handle);
-
-                    if (!AssignProcessToJobObject(_jobHandle, process.Handle))
-                    {
-                        int error = Marshal.GetLastWin32Error();
-                        _logger.LogError($"Failed to assign process to job object. Error code: {error}");
-                    }
+                    AssignProcessToCurrentJob(process);
 
                     await process.WaitForExitAsync();
 
@@ -490,8 +499,39 @@ namespace MetaData.Services
             if (_jobHandle != IntPtr.Zero)
             {
                 TerminateJobObject(_jobHandle, 0);
-                _jobHandle = IntPtr.Zero;
+                CloseJobHandle();
             }
+        }
+
+        private void AssignProcessToCurrentJob(Process process)
+        {
+            if (_jobHandle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            if (!AssignProcessToJobObject(_jobHandle, process.Handle))
+            {
+                int error = Marshal.GetLastWin32Error();
+                _logger.LogWarning("Failed to assign process to job object. Error code: {ErrorCode}", error);
+            }
+        }
+
+        private void CloseJobHandle()
+        {
+            if (_jobHandle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            CloseHandle(_jobHandle);
+            _jobHandle = IntPtr.Zero;
+        }
+
+        public void Dispose()
+        {
+            CloseJobHandle();
+            GC.SuppressFinalize(this);
         }
     }
 }

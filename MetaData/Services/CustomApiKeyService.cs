@@ -17,6 +17,11 @@ namespace MetaData.Services
         }
         public async Task Invoke(HttpContext httpContext)
         {
+            if (httpContext.Request.Path.Equals("/health", StringComparison.OrdinalIgnoreCase))
+            {
+                await _next(httpContext);
+                return;
+            }
             
             bool success = httpContext.Request.Headers.TryGetValue 
             (API_KEY, out var apiKeyFromHttpHeader);
