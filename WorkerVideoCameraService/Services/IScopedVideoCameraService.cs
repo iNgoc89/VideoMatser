@@ -77,16 +77,19 @@ namespace WorkerVideoCameraService.Services
             TimeProcess = int.Parse(_configuration["TimeProcess"] ?? "50");
 
             CameraData = CameraData.getInstance();
-            if (CameraData.Cameras.Count == 0)
-            {
-                CameraData.Cameras = _iOTService.GetCameras().Where(x => x.BusinessId == TypeVideo).ToList();
-            }
         }
 
         public async Task RunApp(CancellationToken stoppingToken)
         {
             if (ThuMucLay > 0 && TimeOut != "0" && TypeVideo > 0 && TimeVideo > 0 && TimeProcess > 0)
             {
+                if (CameraData.Cameras.Count == 0)
+                {
+                    CameraData.Cameras = (await _iOTService.GetCamerasAsync(stoppingToken))
+                        .Where(x => x.BusinessId == TypeVideo)
+                        .ToList();
+                }
+
                 if (CameraData.Cameras.Count > 0)
                 {
                     var timeVideo = TimeVideo / 1000;
@@ -95,7 +98,7 @@ namespace WorkerVideoCameraService.Services
                     while (!stoppingToken.IsCancellationRequested)
                     {
                         CleanupCompletedTasks();
-                        var cameDangChay = _iOTService.GetCamerasDangChay().ToList();
+                        var cameDangChay = await _iOTService.GetCamerasDangChayAsync(stoppingToken);
                         _healthState.MarkCycleStarted(GetActiveTaskCount());
 
                         var dateNow1 = DateTime.Now;

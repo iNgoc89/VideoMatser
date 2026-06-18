@@ -133,6 +133,34 @@ namespace MetaData.Services
             return cameras;
         }
 
+        public async Task<List<CameraModel>> GetCamerasAsync(CancellationToken cancellationToken = default)
+        {
+            List<CameraModel> cameras = new List<CameraModel>();
+            await using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync(cancellationToken);
+                string sql = $"select * from cmrs.GetCameraData()";
+                try
+                {
+                    var command = new CommandDefinition(
+                        commandText: sql,
+                        commandType: CommandType.Text,
+                        cancellationToken: cancellationToken);
+
+                    cameras = (await connection.QueryAsync<CameraModel>(command)).ToList();
+
+                    return cameras;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                }
+
+            }
+
+            return cameras;
+        }
+
         public List<CameraModel> GetCamerasDangChay()
         {
             List<CameraModel> cameras = new List<CameraModel>();
@@ -144,6 +172,34 @@ namespace MetaData.Services
                 {
                     cameras = connection.Query<CameraModel>(sql: sql,
                      commandType: CommandType.Text).ToList();
+
+                    return cameras;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Lỗi {System.Reflection.MethodInfo.GetCurrentMethod()}");
+                }
+
+            }
+
+            return cameras;
+        }
+
+        public async Task<List<CameraModel>> GetCamerasDangChayAsync(CancellationToken cancellationToken = default)
+        {
+            List<CameraModel> cameras = new List<CameraModel>();
+            await using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync(cancellationToken);
+                string sql = $"select * from cmrs.GetCameraVideo_DangChay()";
+                try
+                {
+                    var command = new CommandDefinition(
+                        commandText: sql,
+                        commandType: CommandType.Text,
+                        cancellationToken: cancellationToken);
+
+                    cameras = (await connection.QueryAsync<CameraModel>(command)).ToList();
 
                     return cameras;
                 }

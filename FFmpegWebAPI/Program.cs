@@ -32,7 +32,8 @@ internal class Program
         builder.Services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("databases")
             .AddCheck<StorageFolderHealthCheck>("storage-folders")
-            .AddCheck<FFmpegHealthCheck>("ffmpeg");
+            .AddCheck<FFmpegHealthCheck>("ffmpeg")
+            .AddCheck<CameraStatusHealthCheck>("cameras");
 
 
         var app = builder.Build();
@@ -105,7 +106,8 @@ internal class Program
                         status = entry.Value.Status.ToString(),
                         description = entry.Value.Description,
                         error = entry.Value.Exception?.Message,
-                        duration = entry.Value.Duration.ToString()
+                        duration = entry.Value.Duration.ToString(),
+                        data = entry.Value.Data
                     })
                 }, new JsonSerializerOptions
                 {
